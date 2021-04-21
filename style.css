@@ -1,0 +1,339 @@
+/*************/
+/* Web fonts */
+/*************/
+@font-face{
+    font-family: 'Source Serif 4';
+    font-weight: 400;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fnt/SourceSerif4-Regular.ttf.woff2') format('woff2'),
+         url('/fnt/SourceSerif4-Regular.otf.woff') format('woff'),
+         url('/fnt/SourceSerif4-Regular.otf') format('opentype'),
+         url('/fnt/SourceSerif4-Regular.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Serif 4';
+    font-weight: 400;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fnt/SourceSerif4-It.ttf.woff2') format('woff2'),
+         url('/fnt/SourceSerif4-It.otf.woff') format('woff'),
+         url('/fnt/SourceSerif4-It.otf') format('opentype'),
+         url('/fnt/SourceSerif4-It.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Serif 4';
+    font-weight: 700;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fnt/SourceSerif4-Bold.ttf.woff2') format('woff2'),
+         url('/fnt/SourceSerif4-Bold.otf.woff') format('woff'),
+         url('/fnt/SourceSerif4-Bold.otf') format('opentype'),
+         url('/fnt/SourceSerif4-Bold.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Serif 4';
+    font-weight: 700;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fnt/SourceSerif4-BoldIt.ttf.woff2') format('woff2'),
+         url('/fnt/SourceSerif4-BoldIt.otf.woff') format('woff'),
+         url('/fnt/SourceSerif4-BoldIt.otf') format('opentype'),
+         url('/fnt/SourceSerif4-BoldIt.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 400;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fnt/SourceCodePro-Regular.ttf.woff2') format('woff2'),
+         url('/fnt/SourceCodePro-Regular.otf.woff') format('woff'),
+         url('/fnt/SourceCodePro-Regular.otf') format('opentype'),
+         url('/fnt/SourceCodePro-Regular.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 400;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fnt/SourceCodePro-It.ttf.woff2') format('woff2'),
+         url('/fnt/SourceCodePro-It.otf.woff') format('woff'),
+         url('/fnt/SourceCodePro-It.otf') format('opentype'),
+         url('/fnt/SourceCodePro-It.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 700;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('/fnt/SourceCodePro-Bold.ttf.woff2') format('woff2'),
+         url('/fnt/SourceCodePro-Bold.otf.woff') format('woff'),
+         url('/fnt/SourceCodePro-Bold.otf') format('opentype'),
+         url('/fnt/SourceCodePro-Bold.ttf') format('truetype');
+}
+
+@font-face{
+    font-family: 'Source Code Pro';
+    font-weight: 700;
+    font-style: italic;
+    font-stretch: normal;
+    src: url('/fnt/SourceCodePro-BoldIt.ttf.woff2') format('woff2'),
+         url('/fnt/SourceCodePro-BoldIt.otf.woff') format('woff'),
+         url('/fnt/SourceCodePro-BoldIt.otf') format('opentype'),
+         url('/fnt/SourceCodePro-BoldIt.ttf') format('truetype');
+}
+
+/*********************************************/
+/* Reset, from                               */
+/* http://meyerweb.com/eric/tools/css/reset/ */
+/* v2.0 | 20110126                           */
+/*********************************************/
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p,
+blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img,
+ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center,
+dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody,
+tfoot, thead, tr, th, td, article, aside, canvas, details, embed,figure,
+figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+/* Re-styled sup/super scripts (not sure we should reset them at all...) */
+sub {
+    vertical-align: sub;
+    font-size: 80%;
+}
+sup {
+    vertical-align: super;
+    font-size: 80%;
+}
+html {
+    font-size: 18px;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1, "liga" 1, "tnum" 1;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section, pre code {
+    display: block;
+}
+body {
+    line-height: 1;
+}
+ol, ul {
+    padding-left: 1rem;
+    list-style: disc;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after, q:before, q:after {
+    content: '';
+    content: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+html {
+    /* background-image:url(../img/2.png); */
+    /* background-repeat: no-repeat; */
+    /* background-position: center top; */
+    /* background-origin: content-box; */
+    width : 100%;
+    height: 100%;
+}
+
+#clear{
+    clear: both;
+}
+/*************/
+/* end reset */
+/*************/
+
+
+/* Links */
+article a {
+    color: #47230a;
+    text-decoration: none;
+    border-bottom: thin dotted #808080;
+}
+article a:visited {
+    color:#47230a;
+}
+article a:hover {
+    color: #753910;
+    text-decoration: none;
+    border-bottom: none;
+}
+
+/* fonts */
+code {
+    font-family: "Source Code Pro", monospace;
+    font-size: 95%;
+}
+body {
+    font-family: "Source Serif 4", sans-serif;
+    background-color:rgba(255,249,249,0.8);
+}
+strong {
+    font-weight: 600;
+}
+em {
+    font-style: italic;
+}
+
+/* non-main elements */
+header #logo {
+    float: right;
+    padding-top: 1rem;
+}
+
+footer {
+    border-top: thin solid #ff6600;
+    padding: 0.4rem;
+    margin: 0 4rem 1.6rem 2rem;
+}
+
+/* Navigation bar */
+nav a {
+    width: 225px;
+    color: black;
+    border-bottom: thin solid #aaa;
+    display: block;
+    padding: 0.3rem 0.4em 0.3rem 0.4em;
+    text-decoration: none;
+    font-size: 115%
+}
+nav a:hover {
+    background-color:#e4b08d;
+}
+nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+nav ul ul {
+    padding-left: 2rem; /* Indentation */
+    padding-bottom: 0.6rem; /* Slightly marks end of list. Optional */
+}
+
+/* quotes */
+blockquote {
+    border-left: thin solid #ff6600;
+    padding-left: 1rem;
+}
+
+/* code blocks */
+pre {
+    border-top: thin solid #ff6600;
+    border-bottom: thin solid #ff6600;
+    margin: 0 0 1.6rem 2rem;
+}
+pre code {
+    padding: 0.5rem;
+}
+
+/* mathematical and code variables */
+var {
+    font-style: italic;
+}
+
+/* vertical rythm */
+body {
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+h1, h2, h3 {
+    font-weight: 600;
+    font-variant: small-caps;
+}
+h1 {
+    font-size: 130%;
+    margin-bottom: 0.6rem;
+}
+h2 {
+    font-size: 120%;
+    margin: 2rem 0 0.6rem 0;
+    font-feature-settings: "smcp" 1;
+}
+h3 {
+    font-size: 110%;
+    margin: 2rem 0 0.6rem 0;
+    font-feature-settings: "smcp" 1;
+}
+p, ul, ol {
+    margin: 0 0 1.5rem 0;
+}
+table {
+    margin: 0 0 1.5rem 0;
+}
+
+/* desktop layout */
+body {
+    max-width: 768px;
+    max-width: 69ch;
+    margin: 0 auto 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+header {
+    flex: none;
+    margin: 1rem 6rem 2.7rem 3rem;
+}
+header h1 {
+    font-size: 280%;
+    font-variant: none;
+    margin: 2rem 0 0 0;
+}
+footer {
+    flex: none;
+    margin: 1rem 1rem 10rem 1rem;
+}
+.center {
+    display: flex;
+    flex: 1;
+    padding: 0 1rem 0 1rem;
+}
+nav {
+    order: -1;
+    flex: 0 0 18rem;
+    margin: 0 2rem 0 0;
+}
+article {
+    flex: 1;
+}
+
+/* mobile layout */
+@media (max-width:1000px) {
+    header h1 {
+        font-size: 2.8rem;
+        margin-bottom: 0.2rem;
+    }
+    body {
+        max-width: 100%;
+        margin: 1 0 1 0;
+        flex-direction: column;
+    }
+    .center {
+        flex-direction: column;
+    }
+    nav {
+        order: 1;
+        flex: 0 0 auto;
+        margin: 1rem 0 0 0;
+    }
+}
+

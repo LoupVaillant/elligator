@@ -1,0 +1,82 @@
+{
+  title: Elligator
+  description: Landing page
+}
+
+**Elligator** is a way to hide a cryptographic key exchange using
+elliptic curves as random noise,
+devised by Daniel J.&nbsp;Bernstein,
+Mike Hamburg,
+Anna Krasnova, and
+Tanja Lange.
+
+# When do you need Elligator?
+
+Elligator addresses a specific problem:
+You need to perform a cryptographic key exchange protocol;
+however, the *very fact that you are using cryptography* is already
+enough of a giveaway to be an issue.
+
+A cryptographic key exchange can happen in various forms.
+Often, you use a Diffie&ndash;Hellman (over multiplicative groups
+or over elliptic curves) key exchange as part of the overall key
+exchange protocol.
+Because these kinds of key exchanges are based on numbers that are not
+uniformly distributed bytes,
+it becomes feasible for a passive observer to determine that you are
+trying to perform a cryptographic key exchange.
+
+This is when Elligator comes in.
+Elligator is a solution to map elliptic curve points of certain types of
+elliptic curves to uniformly randomly distributed bit sequences,
+as well as mapping these uniformly randomly distributed bit sequences
+back to a point on an elliptic curve.
+
+# Who is this website for?
+
+This website is primarily intended as a secondary resource for
+implementers of cryptographic protocols that make use of Elligator.
+It assumes at least a passing familiarity with terms commonly used when
+talking about elliptic curve cryptography.
+If you need an introduction or a refresher,
+I recommend the excellent [&ldquo;ECCHacks&rdquo; talk by Daniel
+J.&nbsp;Bernstein and Tanja Lange](https://media.ccc.de/v/31c3_-_6369_-_en_-_saal_1_-_201412272145_-_ecchacks_-_djb_-_tanja_lange).
+
+The canonical, primary resource for learning about Elligator is
+the paper [Daniel J.&nbsp;Bernstein, Mike Hamburg, Anna Krasnova,
+Tanja Lange. Elligator: Elliptic-curve points indistinguishable from
+uniform random strings.
+ACM Conference on Computer and Communications Security 2013,
+pp.&nbsp;967&ndash;980](https://dl.acm.org/doi/pdf/10.1145/2508859.2516734).
+
+# Is Elligator the solution to censorship-resistance?
+
+No, Elligator is *part of* the solution.
+Elligator can hide positive proof that a cryptographic key exchange is
+taking place.
+It goes without saying, however, that it is exceedingly unlikely for
+two hosts to just send each other random data;
+the mere presence of sequences of random bytes in and of itself remains
+suspicious.
+Protocols that adopt Elligator need to have a bigger picture view of
+the threat model and how to maintain plausible deniability.
+
+Additionally, Elligator cannot do anything to guard against [rubber-hose
+cryptography](https://xkcd.com/538/).
+
+# What other applications does Elligator have?
+
+Elligator is not only used for censorship-resistance.
+A number of cryptographic protocols require a method to map an arbitrary
+input to an elliptic curve point
+(&ldquo;hashing to an elliptic curve&rdquo;),
+such as verifiable random functions (VRFs) and oblivious pseudorandom
+functions (OPRFs).
+Elligator provides a critical part for implementing these kinds of
+cryptographic protocol elements.
+
+# Show me the code.
+
+A reference implementation in Python can be obtained from:
+[elligator.py](elligator.py)
+

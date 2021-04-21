@@ -1,0 +1,6 @@
+{
+  boring: ^_\n.*~$\n^#.*#$
+  source-extension: txt
+  html-processor  : markdown
+  default-language: en
+}

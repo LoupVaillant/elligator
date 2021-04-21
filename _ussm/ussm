@@ -1,0 +1,33 @@
+#! /bin/sh
+
+# Clean up
+rm -rf _ussm/tmp* _ussm/www/
+
+# Copy the directory structure
+for dir in $(ussm-source-dirs); do
+    mkdir -p _ussm/tmp/$dir
+    mkdir -p _ussm/www/$dir
+done
+
+# Copy every non-boring files
+for file in $(find . -name _ussm -prune -o -type f -print |\
+              ussm-remove-boring); do
+    ln $file _ussm/www/$file
+done
+
+# Run the modules
+ussm-core
+ussm-title
+ussm-description
+ussm-menu         # must be run after ussm-title
+ussm-assemble     # must be run last
+
+# Some multilingual stuff (you may not need it)
+# def_ext=$(ussm-setting source-extension)
+# def_lan=$(ussm-setting default-language)
+#
+# for src in $(ussm-source-files            |\
+#              grep $def_lan"\."$def_ext"$" |\
+#              sed 's/\.'$def_lan'\.'$def_ext'$//'); do
+#     ln _ussm/www/$src.$def_lan.html _ussm/www/$src.html
+# done

@@ -1,0 +1,402 @@
+{
+    title: The Elligator map and reverse map
+    description: Describes how to apply Elligator mathematically
+}
+
+# Overview
+
+Elligator specifies two kinds of maps,
+the &ldquo;map&rdquo; (or &ldquo;direct map&rdquo; for clarity)
+and the &ldquo;inverse map&rdquo;.
+
+The map is a function that takes a sequence of uniformly random bytes
+and produces a point on an elliptic curve
+<var>P</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>).
+
+The inverse map then is a function that takes as input an elliptic
+curve point <var>P</var> and outputs a sequence of random bytes;
+the bits not normally occupied by a field element are also filled with
+random bits.
+The resulting random byte string is also called the
+&ldquo;representative&rdquo; because it represents a point on the curve.
+
+For any given point <var>P</var>, applying the inverse map,
+then applying the direct map on the result of that,
+will yield the original point <var>P</var>.
+
+The following statements are assumed to be true:
+
+- The elliptic curve in question has a point of order&nbsp;2,
+  which is true for every Montgomery and (twisted) Edwards curve,
+  like Curve25519 and Curve448.
+- The elliptic curve in question fulfills the following requirements:
+  * It is expressed as and operated over as a curve of the form
+    <var>y</var><sup>2</sup>&nbsp;=&nbsp;<var>x</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>x</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>x</var>,
+  * for which <var>A</var><var>B</var>(<var>A</var><sup>2</sup>&nbsp;&minus;&nbsp;4<var>B</var>)&nbsp;&ne;&nbsp;0.
+- The map and inverse map operate over the same elliptic curve,
+  which is defined by its equation, its curve parameters and the
+  size of the underlying field GF(<var>p</var>).
+- The field prime <var>p</var> is very close to a power of&nbsp;two.
+  This means that random <var>p</var> are unsuitable;
+  only Mersenne primes (2<sup>k</sup>&nbsp;&minus;&nbsp;1),
+  pseudo-Mersenne primes (2<sup>k</sup>&nbsp;&minus;&nbsp;<var>c</var>,
+  with <var>c</var>&nbsp;&le;&nbsp;<var>k</var>) and
+  Solinas primes (2<sup>k</sup>&nbsp;&minus;&nbsp;2<sup>l</sup>&nbsp;...&nbsp;&minus;&nbsp;1)
+  make suitable prime fields for curves for use with Elligator.
+- The field over which the curve is defined is a prime field.
+
+<aside>
+Those already familiar with Elligator may realize that I'm making
+assumptions that are incompatible with Elligator&nbsp;1.
+That's because Elligator&nbsp;1 has not caught on and has no other
+compelling benefits.
+Therefore, I'll just pretend there's only Elligator&nbsp;2.
+Details follow at the end.
+</aside>
+
+# Z, the chosen non-square
+
+The maps each require a *chosen non-square*.
+This can be any member of the field GF(<var>p</var>) over which
+the curve is defined,
+in other words, any integer less than&nbsp;<var>p</var>,
+*if* there is no square root for the chosen non-square
+in GF(<var>p</var>).
+(For easier reading, I'll start abbreviating &ldquo;member of the field
+over which the curve is defined&rdquo; as &ldquo;field element&rdquo;.)
+
+More succinctly, a non-square&nbsp;<var>Z</var> in GF(<var>p</var>) is
+any field element for which <var>a</var><sup>2</sup>&nbsp;=&nbsp;<var>Z</var>
+cannot be solved for <var>a</var>.
+
+Every party involved in the mappings must choose the same
+non-square&nbsp;<var>Z</var>.
+For GF(2<sup>255</sup>&nbsp;&minus;&nbsp;19),
+I will assume <var>Z</var>&nbsp;=&nbsp;2;
+for GF(2<sup>448</sup>&nbsp;&minus;&nbsp;2<sup>224</sup>&nbsp;&minus;&nbsp;19),
+I will assume <var>Z</var>&nbsp;=&nbsp;&minus;1.
+
+<aside>
+For the implementation of square roots and checking whether a number is
+a square root in GF(<var>p</var>),
+refer to [I-D.draft-irtf-cfrg-hash-to-curve-11, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-11#appendix-I).
+</aside>
+
+# The inverse map
+
+Counterintuitively, I will begin describing the maps with the *inverse*
+map,
+i.&thinsp;e. transforming a point on an elliptic curve to a sequence
+of uniformly random bytes.
+Ultimately, every protocol will first generate the public key point from
+a private secret and serialize it.
+Therefore, the natural order is to start with the inverse map since it's
+the logical first step in a higher-level protocol.
+
+The inverse map is not possible for all points on the curve.
+It is only possible on points for which the following conditions hold
+true, where <var>x</var> refers to the x-coordinate of the point,
+<var>y</var> refers to the y-coordinate of the point,
+<var>A</var> is a curve parameter, and
+<var>Z</var> is the chosen non-square as noted above:
+
+- <var>x</var>&nbsp;&ne;&nbsp;&minus;A;
+- &minus;<var>Z</var><var>x</var>(<var>x</var>&nbsp;+&nbsp;<var>A</var>)
+  is a square;
+- Additionally, if <var>y</var>&nbsp;=&nbsp;0, then <var>x</var>
+  <em>must</em> be zero, too.
+
+Additionally, it is necessary to have a way to determine
+if a field element is negative.
+for Ed25519 and Ed448, it works like this:
+
+- if the input is greater than&nbsp;<var>p</var>,
+  it is first reduced modulo&nbsp;<var>p</var>;
+- if the field element is odd, it is considered negative;
+- if the field element is even (including zero), it is considered
+  non-negative.
+
+For interoperability purposes, the definition of whether a field is
+negative here follows the same definition.
+
+Given these parts, it is now possible to define the inverse map.
+To encode a point <var>P</var> as a sequence of uniformly random bytes,
+do:
+
+1. verify if <var>P</var> is suitable for encoding as noted above,
+   else signal an error;
+1. if the y-coordinate is negative:
+   the result is the encoding of:
+   &radic;(&minus;<var>x</var>&middot;(<var>Z</var>&middot;(<var>x</var>&nbsp;+&nbsp;<var>A</var>))<sup>&minus;1</sup>)
+1. if the y-coordinate is not negative:
+   the result is the encoding of:
+   &radic;(&minus;(<var>x</var>&nbsp;+&nbsp;<var>A</var>)&middot;(<var>Z</var>&middot;<var>x</var>)<sup>&minus;1</sup>)
+
+Any bits not required for the representation of a field element *must*
+be filled with random bits.
+
+# The direct map
+
+Unlike the invese map, the direct map has no special input requirements.
+All inputs are valid.
+
+A prerequisite is the `legendre()` function;
+it computes the [Legendre symbol](https://en.wikipedia.org/wiki/Legendre_symbol),
+i.&thinsp;e. it takes as input a field element and returns
+zero&nbsp;if the field element is zero,
+else 1&nbsp;if the field element is a square,
+&minus;1&nbsp;otherwise.
+This can beconstructed using the square root checking functions needed
+to find the chosen non-square <var>Z</var> above,
+but can also be succinctly defined as:
+`legendre`(<var>f</var>)&nbsp;=&nbsp;<var>f</var><sup>(<var>p</var>&nbsp;&minus;&nbsp;1)&nbsp;/&nbsp;2</sup>.
+
+Using the same variable conventions as above,
+a byte string <var>r</var> is converted to a point on the curve
+as follows:
+
+1. <var>w</var>&nbsp;=&nbsp;&minus;<var>A</var>&middot;(1&nbsp;+&nbsp;<var>Z</var>&middot;<var>r</var><sup>2</sup>)<sup>&minus;1</sup>
+1. <var>e</var>&nbsp;=&nbsp;`legendre`(<var>w</var>&nbsp;+&nbsp;<var>A</var>&middot;<var>w</var><sup>2</sup>&nbsp;+&nbsp;<var>w</var>)
+1. <var>u</var>&nbsp;=&nbsp;<var>e</var>&middot;<var>w</var>&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;<var>e</var>)&middot;(<var>A</var>&nbsp;/&nbsp;2)
+1. <var>v</var>&nbsp;=&nbsp;&minus;<var>e</var>&middot;&radic;(<var>u</var><sup>3</sup>&nbsp;+&nbsp;A&middot;u<sup>2</sup>&nbsp;+&nbsp;<var>u</var>)
+1. Construct a point P with x-coordinate <var>u</var>
+   and y-coordinate <var>v</var>.
+
+# Generating the key pair and performing the key exchange
+
+Because not all points are eligible for the inverse map,
+not all valid private keys yield a key public suitable for the Elligator
+inverse map.
+Instead, your key pair generation function needs to perform the above
+checks and retry with a new private key until the resulting public key
+meets the precondition for the inverse map.
+
+However, there are more complications than that.
+To ensure *uniformly random distribution*, points of the whole curve
+must be used.
+Normally, the key generation procedure will &ldquo;clamp&rdquo;
+the private key scalar.
+Clamping sets the most significant bit (for performance reasons) and
+[clears the cofactor](https://loup-vaillant.fr/tutorials/cofactor)
+by setting the bottom three&nbsp;(Curve25519)
+or two&nbsp;(Curve448)&nbsp;bits to&nbsp;zero.
+This leads to a biased selection of points because this avoids
+low-order components.
+While this is normally a good thing,
+The Elligator inverse map relies on uniform distribution of points
+to actually make the points indistinguishable from random noise.
+
+The keys generated using this algorithm.
+
+## Key pair generation algorithm
+
+It is therefore important *not* to clamp the scalars used and to use
+a base point that is a generator of the *whole* curve.
+The key pair generation algorithm **for curve25519** should thus work
+as follows:
+
+1. Select a secret 256-bit string <var>s</var>
+   (448-bit for curve448).
+1. Compute <var>s<sub>clamp</sub></var> by clamping <var>s</var>
+   as you would for any normal X25519/X448 operation.
+1. Compute <var>s<sub>low</sub></var> by keeping the lowest
+   three&nbsp;bits (two&nbsp;bits for curve448) of <var>s</var>
+   that are normally set to&nbsp;zero by clamping.
+1. Multiply <var>s<sub>low</sub></var> by&nbsp;five,
+   then multiply it again by the order of the *prime-order
+   subgroup*&nbsp;<var>L</var>,
+   add the result to <var>s<sub>clamp</sub></var>
+   and reduce that modulo the order
+   of the *whole curve*&nbsp;<var>n</var>,
+   storing the result in <var>s&prime;</var>:<br>
+   <var>s&prime;</var>&nbsp;=&nbsp;(<var>s<sub>clamp</sub></var>&nbsp;+&nbsp;<var>s<sub>low</sub>&middot;5&middot;<var>L</var>)&nbsp;mod&nbsp;<var>n</var>
+1. Perform scalar multiplication between <var>s&prime;</var> and
+   <var>G</var>. The result is the public key point
+   candidate&nbsp;<var>S</var>.
+1. Check if <var>S</var> meets the criteria for the inverse map above.
+   Retry from the beginning if it does not.
+   Return the key pair (<var>s</var>, <var>S</var>) if it does.
+
+When working with **edwards25519** (or when you don't mind crossing
+Montgomery space to twisted Edwards and back &ndash; it's faster,
+but requires more code if you do not use twisted Edwards point
+arithmetic for anything else),
+you may instead opt for the following, more straight-forward algorithm:
+
+1. Compute <var>s<sub>clamp</sub></var> by clamping <var>s</var>
+   as you would for any normal X25519/X448 operation.
+1. Compute <var>s<sub>low</sub></var> by keeping the lowest
+   three&nbsp;bits (two&nbsp;bits for curve448) of <var>s</var>
+   that are normally set to&nbsp;zero by clamping.
+1. Compute <var>S<sub>clamp</sub></var> by
+   performing scalar multiplication between <var>s<sub>clamp</sub></var>
+   and the normal base point&nbsp;<var>B</var>.
+1. Compute <var>S<sub>low</sub></var> by
+   performing scalar multiplication between <var>s<sub>low</sub></var>
+   and the low-order base point&nbsp;<var>C</var>.
+1. Perform point addition between&nbsp;<var>S<sub>clamp</sub></var>
+   and&nbsp;<var>S<sub>low</sub></var>.
+   The result is the public key point candidate&nbsp;<var>S</var>.
+1. Check if <var>S</var> meets the criteria for the inverse map above.
+   Retry from the beginning if it does not.
+   Return the key pair (<var>s</var>, <var>S</var>) if it does.
+
+The key generation procedure *may* leak how many times it was necessary
+to generate a new private key.
+Because the state of a cryptographically secure random number generator
+must, by definition, not be recoverable by observing its output,
+knowing how many attempts in key generation failed is irrelevant.
+
+## Table of additional curve parameters
+
+The above procedure requires additional information about the curve
+than is usually provided.
+For the two most common curves Elligator can be applied to,
+the required parameters are provided here.
+
+For **curve25519** (Montgomery form):
+
+<table>
+<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
+<tbody>
+<tr><td><var>G</var></td><td>Point (encoded x-coordinate)</td><td><code>34 fc 6c b7 c8 de 58 97 77 70 d9 52 16 cc dc 6c 85 90 be cd 91 9c 07 59 94 14 56 3b 4b a4 47 0f</code></td></tr>
+<tr><td><var>n</var></td><td>integer</td><td>578960446&#8203;186580977&#8203;117854925&#8203;043439539&#8203;268569308&#8203;750392608&#8203;480156075&#8203;062836340&#8203;07912</td></tr>
+<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>68 9f ae e7 d2 18 93 c0 b2 e6 bc 17 f5 ce f7 a6 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80</code></td></tr>
+</tbody>
+</table>
+
+For **edwards25519** (twisted Edwards form):
+
+<table>
+<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
+<tbody>
+<tr><td><var>C</var></td><td>Point (integer coordinates)</td><td>(143993178&#8203;682001182&#8203;603479343&#8203;205272325&#8203;806188239&#8203;711943452&#8203;612142175&#8203;754167887&#8203;99818, 270738550&#8203;114484064&#8203;931822528&#8203;722565878&#8203;893680426&#8203;757531351&#8203;946374360&#8203;975030340&#8203;2022)</td></tr>
+<tr><td><var>C</var></td><td>Point (compressed)</td><td><code>4a d1 45 c5 46 46 a1 de 38 e2 e5 13 70 3c 19 5c bb 4a de 38 32 99 33 e9 28 4a 39 06 a0 b9 d5 1f</code></td></tr>
+<tr><td><var>n</var></td><td>integer</td><td>578960446&#8203;186580977&#8203;117854925&#8203;043439539&#8203;268569308&#8203;750392608&#8203;480156075&#8203;062836340&#8203;07912</td></tr>
+<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>68 9f ae e7 d2 18 93 c0 b2 e6 bc 17 f5 ce f7 a6 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80</code></td></tr>
+</tbody>
+</table>
+
+For **curve448** (Montgomery form):
+
+<table>
+<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
+<tbody>
+<tr><td><var>G</var></td><td>Point (encoded x-coordinate)</td><td><code>78 91 bd 50 c5 b8 16 f8 34 85 d0 81 e9 19 a8 d7 00 25 d3 51 e5 7a 9d f3 c4 9c df ae 7f 27 6f ed 3b a8 42 b7 fe 73 a8 ff 5b f3 a1 55 c2 c5 17 ba fd a4 79 69 c3 06 4a</code></td></tr>
+<tr><td><var>n</var></td><td>integer</td><td>726838724&#8203;295606890&#8203;549323807&#8203;888004534&#8203;353641360&#8203;687318060&#8203;281490199&#8203;180584015&#8203;846158342&#8203;864783021&#8203;166769503&#8203;853241174&#8203;836366649&#8203;219095023&#8203;438599116</td></tr>
+<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>cc 13 61 ad 4a 0a e3 8d 54 3d 16 37 ca 09 b3 85 40 da 58 bb 26 6d 3b 11 a7 8f 28 f3 fd ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff</code></td></tr>
+</tbody>
+</table>
+
+For **edwards448** (twisted Edwards form):
+
+<table>
+<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
+<tbody>
+<tr><td><var>C</var></td><td>Point (integer coordinates)</td><td>(, ) !! TODO apparently this can't *just* be (1, 0)? Monocypher property-based checks fail if I replace `lop_x`, `lop_y` with (1, 0), so this probably has some subtle relationship with curve448 G</td></tr>
+<tr><td><var>C</var></td><td>Point (compressed)</td><td>``</td></tr>
+<tr><td><var>n</var></td><td>integer</td><td>726838724&#8203;295606890&#8203;549323807&#8203;888004534&#8203;353641360&#8203;687318060&#8203;281490199&#8203;180584015&#8203;846158342&#8203;864783021&#8203;166769503&#8203;853241174&#8203;836366649&#8203;219095023&#8203;438599116</td></tr>
+<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>cc 13 61 ad 4a 0a e3 8d 54 3d 16 37 ca 09 b3 85 40 da 58 bb 26 6d 3b 11 a7 8f 28 f3 fd ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff</code></td></tr>
+</tbody>
+</table>
+
+**The points <var>G</var> and <var>C</var> are not nothing-up-my-sleeve
+points.** Unlike the base point, these were chosen basically
+arbitrarily.
+The curve25519/edwards25519 ones match Monocypher.
+The curve448/edwards448 were generated by whatever Sage felt like today
+for the Weierstraß representation of curve448.
+
+# Bridging the Montgomery gap: Mappings for twisted Edwards curves
+
+Elligator operates over a curve of the form <var>y</var><sup>2</sup>&nbsp;=&nbsp;<var>x</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>x</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>x</var>,
+for which <var>A</var><var>B</var>(<var>A</var><sup>2</sup>&nbsp;&minus;&nbsp;4<var>B</var>)&nbsp;&ne;&nbsp;0.
+However, you may wish to hide twisted Edwards curves instead;
+for example because you need both signing/signature verification and
+key exchange,
+but are limited by code size rather than performance,
+or your protocol involves presenting a signed and encrypted blob of
+data before any actual Diffie&ndash;Hellman operation
+for whatever reason, where the signature must also be hidden.
+The solution is to apply steps before the inverse map and after the map.
+
+For all of the following, **it is assumed that the points on the
+twisted Edwards curve are in affine coordinates (<var>x</var>,&nbsp;<var>y</var>)**.
+If your internal representation uses extended
+(<var>X</var>&nbsp;:&nbsp;<var>Y</var>&nbsp;:&nbsp;<var>Z</var>&nbsp;:&nbsp;<var>T</var>) coordinates,
+they must first be converted to affine coordinates:
+
+1. <var>z</var>&nbsp;=&nbsp;<var>Z</var><sup>&minus;1</sup>,
+1. <var>x</var>&nbsp;=&nbsp;<var>X</var>&middot;<var>Z</var>,
+1. <var>y</var>&nbsp;=&nbsp;<var>Y</var>&middot;<var>Z</var>,
+1. return the affine coordinates (<var>x</var>,&nbsp;<var>y</var>).
+
+<!-- https://tools.ietf.org/html/draft-struik-lwip-curve-representations-00#appendix-C -->
+
+To use the **inverse map**, first convert the twisted Edwards point
+<var>P<sub>TEd</sub></var>(<var>x</var>,&nbsp;<var>y</var>)
+to the equivalent point
+<var>P<sub>Mont</sub></var>(<var>u</var>,&nbsp;<var>v</var>)
+on the birationally equivalent Montgomery curve
+This can be achieved as follows:
+
+1. If <var>P<sub>TEd</sub></var>&nbsp;=&nbsp;(0,&nbsp;1), then
+   signal an error.
+   It corresponds to the point at infinity on the Montgomery curve,
+   which cannot be encoded with Elligator.
+1. If <var>P<sub>TEd</sub></var>&nbsp;=&nbsp;(0,&nbsp;&minus;1), then
+   return <var>P<sub>Mont</sub></var>&nbsp;=&nbsp;(0,&nbsp;0).
+1. <var>u</var>&nbsp;=&nbsp;(1&nbsp;+&nbsp;<var>y</var>)&middot;(1&nbsp;&minus;&nbsp;<var>y</var>)<sup>&minus;1</sup>,
+1. <var>v</var>&nbsp;=&nbsp;(1&nbsp;+&nbsp;<var>y</var>)&middot;((1&nbsp;&minus;&nbsp;<var>y</var>)<var>x</var>)<sup>&minus;1</sup>,
+1. Construct and return
+   <var>P<sub>Mont</sub></var>(<var>u</var>,&nbsp;<var>v</var>).
+
+After that, the inverse map can be used as above.
+
+To use the **direct map**, after obtaining the point
+<var>P<sub>Mont</sub></var>(<var>u</var>,&nbsp;<var>v</var>)
+on the Montgomery curve, map it to twisted Edwards space.
+This can be achieved as follows:
+
+1. If <var>P<sub>Mont</sub></var> is the point at infinity,
+   signal an error or abort execution entirely.
+   This should *not* be a possible input to the conversion function
+   after the direct map.
+   If this function is used for other contexts, too,
+   then you may return <var>P<sub>TEd</sub></var>&nbsp;=&nbsp;(0,&nbsp;&minus;1).
+2. If <var>P<sub>Mont</sub></var>&nbsp;=&nbsp;(0,&nbsp;0), then
+   return <var>P<sub>TEd</sub></var>&nbsp;=&nbsp;(0,&nbsp;&minus;1).
+3. <var>x</var>&nbsp;=&nbsp;<var>u</var>&middot;<var>v</var><sup>&minus;1</sup>,
+4. <var>y</var>&nbsp;=&nbsp;(<var>u</var>&nbsp;&minus;&nbsp;1)&middot;(<var>u</var>&nbsp;+&nbsp;1)<sup>&minus;1</sup>,
+5. Construct and return
+   <var>P<sub>TEd</sub></var>(<var>x</var>,&nbsp;<var>y</var>).
+
+<aside>
+You may be wondering why Elligator&nbsp;1 is ignored,
+which itself operates over twisted Edwards curves.
+The reason for that is that it is generally accepted
+that Elligator&nbsp;2 is the superior solution to the problem.
+This is because *every* curve that has a point of order&nbsp;2
+supports Elligator&nbsp;2.
+On the other hand, Elligator&nbsp;1 requires a (twisted) Edwards
+curve in a field GF(<var>p</var>) where
+<var>p</var>&nbsp;=&nbsp;3&nbsp;(mod&nbsp;4).
+However, in such fields, the curve parameter &minus;1 is *non-square*.
+This makes it unsuitable for twisted Edwards curves whose curve
+parameter <var>a</var>&nbsp;=&nbsp;&minus;1 because <var>a</var>
+because addition is no longer well-defined for all inputs
+with <var>a</var> being non-square.
+Any good twisted Edwards curve needs
+<var>a</var>&nbsp;=&nbsp;&minus;1 because the fastest known
+point addition formulae require it.
+Therefore, nobody wants to use curves suitable for Elligator&nbsp;1
+because they incur a performance penalty.
+Accordingly, the Curve1174 presented in the Elligator paper has found
+no adoption.
+</aside>
+
+# Ristretto and Decaf
+
+!! TODO (inverse map can be taken from https://tools.ietf.org/html/draft-irtf-cfrg-ristretto255-decaf448-00#section-4.3.4,
+but it's a "one-way" map... I'm not sure if this can be made to work
+bi-directionally.)

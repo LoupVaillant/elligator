@@ -1,0 +1,61 @@
+{
+    title: Glossary
+    description: Terms used on this website
+}
+
+# Glossary
+
+This page describes various terms used on this website.
+
+# Elliptic Curve
+
+If you need an introduction or a refresher of elliptic curves,
+I recommend the excellent [&ldquo;ECCHacks&rdquo; talk by Daniel
+J.&nbsp;Bernstein and Tanja Lange](https://media.ccc.de/v/31c3_-_6369_-_en_-_saal_1_-_201412272145_-_ecchacks_-_djb_-_tanja_lange).
+
+Pay special attention to when they talk about &ldquo;order&rdquo;.
+Remember it specifies the number of points of the curve
+when talking about the order of the curve,
+but every point also has an order,
+which is the number of points that it can generate itself.
+
+# Map and inverse map
+
+The Elligator map is the function that takes a uniformly random bit
+string and converts it into an elliptic curve point.
+
+The Elligator inverse map is the function that takes an elliptic curve
+point and converts it into an uniformly random-looking bit string.
+
+# Decaf and Ristretto
+
+Decaf is an additional abstraction for twisted Edwards and
+Montgomery curves with cofactor&nbsp;<var>h</var>&nbsp;=&nbsp;4 
+that operates by specifying an encoding and decoding.
+In doing so, it ensures that no points that contain a low-order point
+are ever encoded or decoded;
+internally, low-order points may still happen,
+but can be ignored because only cofactor-clean encodings and decodings
+are ever consumed and emitted.
+This ultimately allows treating a curve with a cofactor identically
+to a curve with prime order.
+
+Ristretto extends Decaf for for twisted Edwards and
+Montgomery curves with cofactor&nbsp;<var>h</var>&nbsp;=&nbsp;8.
+
+More information can be found on the
+[Ristretto website](https://ristretto.group/).
+
+# Constant-time implementation
+
+Safe implementation of elliptic curve cryptography (or all cryptography
+for that matter) requires doing so in *constant-time*.
+This means &ndash; among other things &ndash; no branching operations
+on a secret or a value directly or indirectly derived thereof,
+and no using those values for array indices either.
+Otherwise, timing information would be a *side channel* through which
+the security of th cryptographic operations is undermined,
+often by recovering a secret key.
+
+Thomas Pornin has a lovely, in-depth explanation on the
+[BearSSL website](https://bearssl.org/constanttime.html).
