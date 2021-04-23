@@ -61,7 +61,7 @@ Is Elligator the solution to censorship-resistance?
 It is *part of* the solution.
 Elligator can hide positive proof that a cryptographic key exchange is
 taking place.
-It goes without saying however, that it is exceedingly unlikely for
+It goes without saying, however, that it is exceedingly unlikely for
 two hosts to just send each other random data;
 the mere presence of sequences of random bytes in and of itself remains
 suspicious.

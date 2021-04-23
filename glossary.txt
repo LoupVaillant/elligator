@@ -64,7 +64,7 @@ cryptography for that matter) must run in *constant-time*.
 This means &ndash; among other things &ndash; no secret dependent
 branches,
 and no secret dependent indices:
-secrets (and values derived from secrets, however indirectly),
+secrets (and values derived from secrets, however indirectly)
 must not be used in branches or as array indices.
 
 The goal is to cut all flow of information from secrets to timings,
