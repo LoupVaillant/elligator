@@ -132,6 +132,11 @@ body {
 }
 ol, ul {
     padding-left: 1rem;
+}
+ol {
+    list-style: decimal;
+}
+ul {
     list-style: disc;
 }
 blockquote, q {
