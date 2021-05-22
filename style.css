@@ -234,6 +234,15 @@ nav ul ul {
     padding-bottom: 0.6rem; /* Slightly marks end of list. Optional */
 }
 
+
+/* asides */
+aside {
+    padding-left: 1rem;
+    margin-left: 3rem;
+    font-style: italic;
+    background-color: lightgray;
+}
+
 /* quotes */
 blockquote {
     border-left: thin solid #ff6600;
