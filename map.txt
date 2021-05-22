@@ -64,14 +64,14 @@ Some conditions must hold:
 
 - Additionally,
   for Elligator to properly hide points on the curve as random noise,
-  The charecteristic of its field must be very close to a power of two.
+  The characteristic of its field must be very close to a power of two.
   This is because we're ultimately transmitting bit strings over the
   network,
   whose range is always a power of two.
   In practice, only Mersenne primes (2<sup>k</sup>&nbsp;&minus;&nbsp;1),
   pseudo-Mersenne primes (2<sup>k</sup>&nbsp;&minus;&nbsp;<var>c</var>),
   and _some_ Solinas primes
-  (2<sup>k</sup>&nbsp;&minus;&nbsp;2<sup>l</sup>&nbsp;...&nbsp;&minus;&nbsp;1
+  (2<sup>k</sup>&nbsp;&minus;&nbsp;2<sup>l</sup>&nbsp;&hellip;&nbsp;&minus;&nbsp;1
   where <var>k</var>&nbsp;&minus;&nbsp;<var>l</var> ideally exceeds 128)
   are adequate.
 
@@ -118,7 +118,7 @@ Before actually defining the maps, we need to fix those parameters.
   <var>v</var><sup>2</sup>&nbsp;=&nbsp;<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u</var>.
 
   Examples of elliptic curves include Curve25519
-  (<var>A</var>&nbsp;=&nbsp;486662, <var>B</var>&nbsp;=&nbsp; 1) and
+  (<var>A</var>&nbsp;=&nbsp;486662, <var>B</var>&nbsp;=&nbsp;1) and
   Curve448.
 
 - The **non-square** <var>Z</var> in GF(<var>q</var>).
@@ -261,7 +261,7 @@ public key that can be mapped.
 This requires two tries on average.
 
 <aside>
-While the "check and retry" approach is not constant time,
+While the &ldquo;check and retry&rdquo; approach is not constant time,
 assuming the keys were properly selected at random,
 leaking the number of tries to an eavesdropper will not reveal anything
 else.
@@ -314,7 +314,7 @@ Those two key exchanges have the same structure:
 - They both use a base point <var>G</var> of prime order <var>l</var>.
 - They both "clamp" the scalar in the same way.
 - They both use an x-only Montgomery ladder,
-  that ignores the sign of the point.
+  which ignores the sign of the point.
   That is, <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
   and
   &minus;<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;&minus;<var>v</var>)
@@ -435,7 +435,7 @@ generated,
 we convert it to the Montgomery point
 <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>):
 
-- <var>u</var>&nbsp;=&nbsp;(1&nbsp;+&nbsp;<var>y</var>)&nbsp;/&nbsp;(1&nbsp;-&nbsp;<var>y</var>)
+- <var>u</var>&nbsp;=&nbsp;(1&nbsp;+&nbsp;<var>y</var>)&nbsp;/&nbsp;(1&nbsp;&minus;&nbsp;<var>y</var>)
 
 <aside>
 We don't need the <var>v</var> coordinate.
