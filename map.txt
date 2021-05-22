@@ -119,7 +119,7 @@ Before actually defining the maps, we need to fix those parameters.
 
   Examples of elliptic curves include Curve25519
   (<var>A</var>&nbsp;=&nbsp;486662, <var>B</var>&nbsp;=&nbsp;1) and
-  Curve448.
+  Curve448 (<var>A</var>&nbsp;=&nbsp;156326, <var>B</var>&nbsp;=&nbsp;1).
 
 - The **non-square** <var>Z</var> in GF(<var>q</var>).
   It can be any number in GF(<var>p</var>) that has no square root.
