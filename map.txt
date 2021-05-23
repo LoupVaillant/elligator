@@ -65,7 +65,7 @@ Some conditions must hold:
 - Additionally,
   for Elligator to properly hide points on the curve as random noise,
   The characteristic of its field must be very close to a power of two.
-  This is because we're ultimately transmitting bit strings over the
+  This is because we are ultimately transmitting bit strings over the
   network,
   whose range is always a power of two.
   In practice, only Mersenne primes (2<sup><var>k</var></sup>&nbsp;&minus;&nbsp;1),
@@ -82,7 +82,7 @@ which have a prime order,
 and therefore lack a point of order two.
 
 <aside>
-Those already familiar with Elligator may realize that we're actually
+Those already familiar with Elligator may realize that we are actually
 talking about Elligator&nbsp;2.
 That's because Elligator&nbsp;1 is less widely applicable,
 has no other compelling benefits,
@@ -104,7 +104,7 @@ Before actually defining the maps, we need to fix those parameters.
   for some prime <var>p</var> and some strictly positive integer
   <var>m</var>.
   Most of the time though,
-  we'll be using a prime field,
+  we will be using a prime field,
   where <var>q</var>&nbsp;=&nbsp;<var>p</var>.
 
   Examples of finite fields include
@@ -253,7 +253,7 @@ First,
 this is only effective on _ephemeral_ keys.
 Using Elligator to hide static public keys will not work,
 because if you send the same representative over and over,
-it won't look random at all.
+it will not look random at all.
 
 Second,
 not all public keys are eligible for the inverse map.
@@ -413,7 +413,7 @@ This means performing the scalar multiplication in Edwards space,
 then converting the final results to Montgomery space so Elligator can
 work.
 Scalar multiplication in Edwards space requires quite a bit of code,
-which may be a problem on constrained applications that don't already
+which may be a problem on constrained applications that do not already
 use it for other purposes,
 like signatures.
 
