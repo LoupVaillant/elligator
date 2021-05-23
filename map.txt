@@ -10,7 +10,7 @@ Elligator specifies two kinds of maps,
 the &ldquo;map&rdquo; (or &ldquo;direct map&rdquo; for clarity)
 and the &ldquo;inverse map&rdquo;.
 
-The map is a function that takes a number <var>r</var> from a an
+The map is a function that takes a number <var>r</var> from an
 elliptic curve's finite field (which we call a _field element_),
 and produces a point
 <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
@@ -68,10 +68,10 @@ Some conditions must hold:
   This is because we're ultimately transmitting bit strings over the
   network,
   whose range is always a power of two.
-  In practice, only Mersenne primes (2<sup>k</sup>&nbsp;&minus;&nbsp;1),
-  pseudo-Mersenne primes (2<sup>k</sup>&nbsp;&minus;&nbsp;<var>c</var>),
+  In practice, only Mersenne primes (2<sup><var>k</var></sup>&nbsp;&minus;&nbsp;1),
+  pseudo-Mersenne primes (2<sup><var>k</var></sup>&nbsp;&minus;&nbsp;<var>c</var>),
   and _some_ Solinas primes
-  (2<sup>k</sup>&nbsp;&minus;&nbsp;2<sup>l</sup>&nbsp;&hellip;&nbsp;&minus;&nbsp;1
+  (2<sup><var>k</var></sup>&nbsp;&minus;&nbsp;2<sup><var>l</var></sup>&nbsp;&hellip;&nbsp;&minus;&nbsp;1
   where <var>k</var>&nbsp;&minus;&nbsp;<var>l</var> ideally exceeds 128)
   are adequate.
 
@@ -86,7 +86,7 @@ Those already familiar with Elligator may realize that we're actually
 talking about Elligator&nbsp;2.
 That's because Elligator&nbsp;1 is less widely applicable,
 has no other compelling benefits,
-and as a result has not caugth on.
+and as a result has not caught on.
 It is thus simpler to ignore it.
 </aside>
 
@@ -161,7 +161,7 @@ The direct map
 
 First, we need to define the `legendre()` function;
 it computes the [Legendre symbol](https://en.wikipedia.org/wiki/Legendre_symbol),
-of a field element f:
+of a field element <var>f</var>:
 
 - `legendre`(<var>f</var>)&nbsp;=&nbsp;0 if <var>f</var> is zero.
 - `legendre`(<var>f</var>)&nbsp;=&nbsp;1 if <var>f</var> is a square.
@@ -182,7 +182,7 @@ as follows:
 - <var>w</var>&nbsp;=&nbsp;&minus;<var>A</var>&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var>&nbsp;<var>r</var><sup>2</sup>)
 - <var>e</var>&nbsp;=&nbsp;`legendre`(<var>w</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>w</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>w</var>)
 - <var>u</var>&nbsp;=&nbsp;<var>e</var>&nbsp;<var>w</var>&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;<var>e</var>)&nbsp;(<var>A</var>&nbsp;/&nbsp;2)
-- <var>v</var>&nbsp;=&nbsp;&minus;<var>e</var>&nbsp;&radic;(<var>u</var><sup>3</sup>&nbsp;+&nbsp;A&nbsp;u<sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>u</var>)
+- <var>v</var>&nbsp;=&nbsp;&minus;<var>e</var>&nbsp;&radic;(<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>u</var>)
 - <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</varsity>)
 
 
@@ -197,7 +197,7 @@ It only holds for points
 - <var>u</var>&nbsp;&ne;&nbsp;&minus;A;
 - &minus;<var>Z</var><var>u</var>(<var>u</var>&nbsp;+&nbsp;<var>A</var>)
   is a square;
-- If <var>v</var>&nbsp;=&nbsp;0,
+- if <var>v</var>&nbsp;=&nbsp;0,
   then <var>u</var>&nbsp;=&nbsp;0 as well.
 
 Assuming those conditions hold, the representative <var>r</var> of
@@ -222,7 +222,7 @@ and suspect our use of Elligator.
 There are two ways to mitigate this problem:
 
 - We can flip the sign of <var>r</var> at random.
-  That is, half the time, we chose &minus;<var>r</var> instead of
+  That is, half the time, we choose &minus;<var>r</var> instead of
   <var>r</var>
   (use constant time selection to do this).
   This will not affect the direct map when we try to recover the point
@@ -308,11 +308,11 @@ Those two key exchanges have the same structure:
 
 - They both use a prime field GF(<var>p</var>),
   whose characteristic is close to a power of two.
-- The order of their curve is a big prime number &#x2113;,
+- The order of their curve is a big prime number <var>&#x2113;</var>,
   multiplied by a small cofactor <var>h</var>
   (<var>h</var>&nbsp;=&nbsp;8 for Curve25519,
   and <var>h</var>&nbsp;=&nbsp;4 for Curve448).
-- They both use a base point <var>G</var> of prime order &#x2113;.
+- They both use a base point <var>G</var> of prime order <var>&#x2113;</var>.
 - They both "clamp" the scalar in the same way.
 - They both use an x-only Montgomery ladder,
   which ignores the sign of the point.
@@ -499,7 +499,7 @@ We start with the following:
 We can then pre-compute the special base point <var>K</var>:
 
 - Find <var>m</var> such that
-  <var>m</var>&nbsp;&#x2113;&nbsp;&equiv;&nbsp;1&nbsp;(`mod`&nbsp;<var>h</var>)  
+  <var>m</var>&nbsp;<var>&#x2113;</var>&nbsp;&equiv;&nbsp;1&nbsp;(`mod`&nbsp;<var>h</var>)
   (<var>m</var>&nbsp;=&nbsp;5 for X25519,
   <var>m</var>&nbsp;=&nbsp;3 for X448)
 - <var>K</var>&nbsp;=&nbsp;<var>G</var>&nbsp;+&nbsp;(<var>m</var>&nbsp;.&nbsp;<var>H</var>)
@@ -514,7 +514,7 @@ we can compute the rest entirely in Montgomery space,
 with a single scalar multiplication:
 
 - <var>s<sub>clamp</sub></var>&nbsp;=&nbsp;`clamp`(<var>s</var>)
-- <var>s<sub>low</sub></var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>h</var>)&nbsp;&#x2113;
+- <var>s<sub>low</sub></var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>h</var>)&nbsp;<var>&#x2113;</var>
 - <var>P</var>&nbsp;=&nbsp;(<var>s<sub>clamp</sub></var>&nbsp;+&nbsp;<var>s<sub>low</sub></var>)&nbsp;.&nbsp;<var>K</var>
 
 This gives us the exact same point <var>P</var> as method&nbsp;1.
@@ -656,7 +656,7 @@ This is because *every* curve that has a point of order&nbsp;2
 supports Elligator&nbsp;2.
 On the other hand, Elligator&nbsp;1 requires a (twisted) Edwards
 curve in a field GF(<var>p</var>) where
-<var>p</var>&nbsp;=&nbsp;3&nbsp;(mod&nbsp;4).
+<var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4).
 However, in such fields, the curve parameter &minus;1 is *non-square*.
 This makes it unsuitable for twisted Edwards curves whose curve
 parameter <var>a</var>&nbsp;=&nbsp;&minus;1 because <var>a</var>
