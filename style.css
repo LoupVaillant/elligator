@@ -237,10 +237,12 @@ nav ul ul {
 
 /* asides */
 aside {
-    padding-left: 1rem;
-    margin-left: 3rem;
+    padding: 0.7rem;
+    margin: 0 1.5rem;
     font-style: italic;
-    background-color: lightgray;
+    background-color: #eeebe7;
+    color: #1e1d1c;
+    font-size: 93%;
 }
 
 /* quotes */
