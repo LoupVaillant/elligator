@@ -40,7 +40,7 @@ Applicability
 -------------
 
 Elligator does not work on all elliptic curves,
-and won't properly hide points on all curves where it does work.
+and will not properly hide points on all curves where it does work.
 Some conditions must hold:
 
 - The finite field the curve is based on must have an odd
@@ -216,7 +216,8 @@ You may have noticed that the reverse map only generates principal
 square roots.
 That is, half of all possible representatives.
 If we sent that directly over the network,
-it would be easy for an eavesdropper to notice it,
+it would be easy for an eavesdropper to notice that one bit is
+effectively always zero,
 and suspect our use of Elligator.
 There are two ways to mitigate this problem:
 
@@ -307,11 +308,11 @@ Those two key exchanges have the same structure:
 
 - They both use a prime field GF(<var>p</var>),
   whose characteristic is close to a power of two.
-- The order of their curve is a big prime number <var>l</var>,
-  multiplied by a small cofactor <var>c</var>
-  (<var>c</var>&nbsp;=&nbsp;8 for Curve25519,
-  and <var>c</var>&nbsp;=&nbsp;4 for Curve448).
-- They both use a base point <var>G</var> of prime order <var>l</var>.
+- The order of their curve is a big prime number &#x2113;,
+  multiplied by a small cofactor <var>h</var>
+  (<var>h</var>&nbsp;=&nbsp;8 for Curve25519,
+  and <var>h</var>&nbsp;=&nbsp;4 for Curve448).
+- They both use a base point <var>G</var> of prime order &#x2113;.
 - They both "clamp" the scalar in the same way.
 - They both use an x-only Montgomery ladder,
   which ignores the sign of the point.
@@ -349,11 +350,13 @@ clamping is designed to ignore <var>L</var>:
 In practice, `clamp` does two things:
 
 - It makes sure the highest non-zero bit is always in the same position.
-  This mitigates some side channel attacks that may occur with some
+  This [mitigates some side channel attacks][clamp] that may occur with some
   faulty implentations.
 - It clears the lowest bits (3 for Curve25519, 2 for Curve448),
-  so `clamp`(<var>s</var>) is a multiple of the cofactor <var>c</var>.
+  so `clamp`(<var>s</var>) is a multiple of the cofactor <var>h</var>.
   This is the part that ignores the low order component.
+
+[clamp]: https://mailarchive.ietf.org/arch/msg/cfrg/pt2bt3fGQbNF8qdEcorp-rJSJrc/
 
 Normal public keys (almost) cover the whole prime order subgroup.
 To cover the whole curve,
@@ -385,8 +388,18 @@ There are two methods to add a random low order point:
    (and not just the prime order subgroup),
    and tweak the scalar to counter the effects of clamping.
 
-Done carefully,
+Done right,
 the two methods yield the exact same results.
+
+<aside>
+Actually,
+since key exchange clears the cofactor,
+the two methods do not have to yield the exact same results to be
+compatible.
+The reason we strongly recommend not just compatible,
+but _identical_ outputs,
+is because it is much easier to test.
+</aside>
 
 
 ### Method 1: add a random low order point
@@ -394,7 +407,12 @@ the two methods yield the exact same results.
 This method is conceptually simple,
 and potentially the fastest.
 On the other hand,
-scalar multiplication in Edwards space requires quite a bit of code,
+it requires generic point addition,
+which is best done in Edwards space.
+This means performing the scalar multiplication in Edwards space,
+then converting the final results to Montgomery space so Elligator can
+work.
+Scalar multiplication in Edwards space requires quite a bit of code,
 which may be a problem on constrained applications that don't already
 use it for other purposes,
 like signatures.
@@ -405,13 +423,13 @@ We start with the following:
   single key exchange
   (256 bits for Curve25519,
   448 bits for curve448).
-- the cofactor <var>c</var> of the curve
+- the cofactor <var>h</var> of the curve
   (8 for Curve25519,
   4 for Curve448).
 - The generator <var>G</var> of the prime order group of the curve
   (the one used in Ed25519 or Ed448).
-- The generator <var>C</var> of the _low_ order group of the curve.
-  It must be of order <var>c</var>.
+- The generator <var>H</var> of the _low_ order group of the curve.
+  It must be of order <var>h</var>.
   Curve25519 has 4 suitable candidates.
   Curve448 has 2.
   We can pick any of those,
@@ -421,9 +439,9 @@ The Edwards point
 <var>E</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>) is generated
 from <var>a</var> as follows:
 
-- <var>H</var>&nbsp;=&nbsp;`clamp`(<var>s</var>)&nbsp;.&nbsp;<var>G</var>
-- <var>L</var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>c</var>)&nbsp;.&nbsp;<var>C</var>
-- <var>E</var>&nbsp;=&nbsp;<var>H</var>&nbsp;+&nbsp;<var>L</var>
+- <var>E<sub>high</sub></var>&nbsp;=&nbsp;`clamp`(<var>s</var>)&nbsp;.&nbsp;<var>G</var>
+- <var>E<sub>low</sub></var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>h</var>)&nbsp;.&nbsp;<var>H</var>
+- <var>E</var>&nbsp;=&nbsp;<var>E<sub>high</sub></var>&nbsp;+&nbsp;<var>E<sub>low</sub></var>
 
 <aside>
 <var>L</var> may be computed with constant time selection and a very
@@ -438,10 +456,12 @@ we convert it to the Montgomery point
 - <var>u</var>&nbsp;=&nbsp;(1&nbsp;+&nbsp;<var>y</var>)&nbsp;/&nbsp;(1&nbsp;&minus;&nbsp;<var>y</var>)
 
 <aside>
-We don't need the <var>v</var> coordinate.
+We don't need the <var>v</var> coordinate here.
 It is ignored by the key exchange,
 Elligator only needs its sign,
 and we have to randomly flip that sign anyway to cover the whole curve.
+(We do need <var>v</var> for blind signatures,
+but those are an entirely separate problem.)
 </aside>
 
 Once we have <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;?)
@@ -468,34 +488,34 @@ We start with the following:
 - The random secret bit string <var>s</var>, freshly generated for a
   single key exchange
   (same as method&nbsp;1).
-- the cofactor <var>c</var> of the curve
+- the cofactor <var>h</var> of the curve
   (8 for Curve25519,
   4 for Curve448).
 - The generator <var>G</var> of the prime order group of the curve.
   We use the same as method&nbsp;1.
-- The generator <var>C</var> of the _low_ order group of the curve.
+- The generator <var>H</var> of the _low_ order group of the curve.
   We use the same as method&nbsp;1.
 
-We can then pre-compute the special base point <var>H</var>:
+We can then pre-compute the special base point <var>K</var>:
 
 - Find <var>m</var> such that
-  <var>m</var>&nbsp;<var>l</var>&nbsp;&equiv;&nbsp;1&nbsp;(`mod`&nbsp;<var>c</var>)  
+  <var>m</var>&nbsp;&#x2113;&nbsp;&equiv;&nbsp;1&nbsp;(`mod`&nbsp;<var>h</var>)  
   (<var>m</var>&nbsp;=&nbsp;5 for X25519,
   <var>m</var>&nbsp;=&nbsp;3 for X448)
-- <var>H</var>&nbsp;=&nbsp;<var>G</var>&nbsp;+&nbsp;(<var>m</var>&nbsp;.&nbsp;<var>C</var>)
+- <var>K</var>&nbsp;=&nbsp;<var>G</var>&nbsp;+&nbsp;(<var>m</var>&nbsp;.&nbsp;<var>H</var>)
 
 <aside>
 We can compute this in Edwards space,
 then convert the result to a Montgomery point.
 </aside>
 
-With <var>H</var> hard coded,
+With <var>K</var> hard coded,
 we can compute the rest entirely in Montgomery space,
 with a single scalar multiplication:
 
 - <var>s<sub>clamp</sub></var>&nbsp;=&nbsp;`clamp`(<var>s</var>)
-- <var>s<sub>low</sub></var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>c</var>)&nbsp;<var>l</var>
-- <var>P</var>&nbsp;=&nbsp;(<var>s<sub>clamp</sub></var>&nbsp;+&nbsp;<var>s<sub>low</sub></var>)&nbsp;.&nbsp;<var>H</var>
+- <var>s<sub>low</sub></var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>h</var>)&nbsp;&#x2113;
+- <var>P</var>&nbsp;=&nbsp;(<var>s<sub>clamp</sub></var>&nbsp;+&nbsp;<var>s<sub>low</sub></var>)&nbsp;.&nbsp;<var>K</var>
 
 This gives us the exact same point <var>P</var> as method&nbsp;1.
 
