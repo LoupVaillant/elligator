@@ -277,9 +277,7 @@ If we only used those,
 an eavesdropper could easily notice that all representatives happen to
 map to points in the prime order subgroup.
 
-That third point is the most problematic,
-and in the past has caused implementations to fail to
-deliver what Elligator promises.
+That third point is the most problematic in practice.
 We need a way to generate points on the _whole_ curve,
 and somehow make key exchange work regardless.
 
