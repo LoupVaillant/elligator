@@ -1,3 +1,6 @@
 _ussm/www/
 _ussm/tmp/
+__pycache__/
+*~
+*.vec
 
