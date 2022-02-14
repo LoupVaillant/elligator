@@ -182,7 +182,7 @@ def cmove(a, b, move):
 # scalar multiplication (Edwards space) #
 #########################################
 
-# Edwards25519 equation (A_e and D_e defined by the curve):
+# Twisted Edwards equation (A_e and D_e defined by the curve):
 # A_e*x^2 + y^2 = 1 + D_e*x^2*y^2
 
 def point_add(p1, p2):

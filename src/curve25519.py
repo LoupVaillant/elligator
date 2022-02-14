@@ -11,7 +11,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2020-2021, Loup Vaillant
+# Copyright (c) 2020-2022, Loup Vaillant
 # All rights reserved.
 #
 #
@@ -41,7 +41,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Written in 2020-2021 by Loup Vaillant
+# Written in 2020-2022 by Loup Vaillant
 #
 # To the extent possible under law, the author(s) have dedicated all copyright
 # and related neighboring rights to this software to the public domain
@@ -89,16 +89,17 @@ def sqrt(n):
 def inv_sqrt(x):
     """Inverse square root of x
 
+    Returns (0               , True ) if x is zero.
     Returns (sqrt(1/x)       , True ) if x is non-zero square.
     Returns (sqrt(sqrt(-1)/x), False) if x is not a square.
-    Returns (0               , False) if x is zero.
 
     The return value is *not* guaranteed to be non-negative.
     """
     isr       = x**((GF.p - 5) // 8)
     quartic   = x * isr**2
-    m_sqrt_m1 = quartic == GF(-1) or quartic == -sqrt_m1 # use CT comparisons
-    is_square = quartic == GF(-1) or quartic == GF(1)    # use CT comparisons
+    # Use constant time comparisons in production code
+    m_sqrt_m1 = quartic == GF(-1) or quartic == -sqrt_m1
+    is_square = quartic == GF(-1) or quartic == GF(1) or x == GF( 0)
     isr       = cmove(isr, isr * sqrt_m1, m_sqrt_m1)
     return isr, is_square
 

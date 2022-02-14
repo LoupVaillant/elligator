@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 # This file is dual-licensed.  Choose whichever licence you want from
 # the two licences listed below.
 #
@@ -11,8 +9,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2020-2022, Loup Vaillant
-# Copyright (c) 2020-2021, Andrew Moon
+# Copyright (c) 2022, Loup Vaillant
 # All rights reserved.
 #
 #
@@ -42,7 +39,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Written in 2020-2022 by Loup Vaillant and Andrew Moon
+# Written in 2022 by Loup Vaillant
 #
 # To the extent possible under law, the author(s) have dedicated all copyright
 # and related neighboring rights to this software to the public domain
@@ -52,83 +49,29 @@
 # with this software.  If not, see
 # <https://creativecommons.org/publicdomain/zero/1.0/>
 
-from core import *
+CC            = gcc -std=c99
+CFLAGS        = -Wall -Wextra -pedantic -O3
+PYFILES       = core.py curve25519.py elligator.py gen_vectors.py
+VECTORS_25519 = curve25519_direct.vec  \
+                curve25519_reverse.vec \
+                curve25519_scalarmult.vec
 
+.PHONY: all test clean
 
-############################
-# Reference Implementation #
-############################
-def map(r):
-    """Computes a point (u, v) from the representative r in GF(p)
+all: $(VECTORS_25519)
 
-    Always succeds
-    """
-    w = -A / (GF(1) + Z * r**2)
-    e = chi(w**3 + A*w**2 + w)
-    u = e*w - (GF(1)-e)*(A//2)
-    v = -e * sqrt(u**3 + A*u**2 + B*u)
-    return (u, v)
+test: test25519
 
-def rev_map(u, v_is_negative):
-    """Computes the representative of the point (u, v), if possible
+test25519: test25519.out $(VECTORS_25519)
+	./$^
 
-    Returns None if the point cannot be mapped.
-    """
-    if u == -A or not is_square(-Z * u * (u+A)):
-        return None
-    sq1 = sqrt(-u     / (Z * (u+A)))
-    sq2 = sqrt(-(u+A) / (Z * u    ))
-    rep = sq1
-    rep = cmove(rep, sq2, v_is_negative)
-    rep = cmove(rep, -rep, rep.is_negative()) # abs(rep)
-    return rep
+curve25519_%.vec: $(PYFILES)
+	./gen_vectors.py curve25519 $* >$@
 
+test25519.out: test25519.c
+	$(CC) $(CFLAGS) $< -o $@               \
+            $$(pkg-config monocypher --cflags) \
+            $$(pkg-config monocypher --libs)
 
-###########################################
-# Fast Implementation (explicit formulas) #
-###########################################
-def fast_map(r):
-    """Computes a point (u, v) from the representative r in GF(p)
-
-    Always succeeds
-    """
-    u  = r**2
-    t1 = u * Z
-    v  = t1 + GF(1)
-    t2 = v**2
-    t3 = A**2
-    t3 = t3 * t1
-    t3 = t3 - t2
-    t3 = t3 * A
-    t1 = t2 * v
-    t1, is_square = inv_sqrt(t3 * t1)
-    u  = u * ufactor  # no-op if ufactor == 1
-    v  = r * vfactor  # copy  if vfactor == 1
-    u  = cmove(u, GF(1), is_square)
-    v  = cmove(v, GF(1), is_square)
-    v  = v * t3
-    v  = v * t1
-    t1 = t1**2
-    u  = u * -A
-    u  = u * t3
-    u  = u * t2
-    u  = u * t1
-    v  = cmove(v, -v, is_square != v.is_negative()) # use constant time XOR
-    return (u, v)
-
-def fast_rev_map(u, v_is_negative):
-    """Computes the representative of the point (u, v), if possible
-
-    Returns None if the point cannot be mapped.
-    """
-    t = u + A
-    r = -Z * u
-    r = r * t
-    isr, is_square = inv_sqrt(r)
-    if not is_square:
-        return None
-    u = cmove(u, t, v_is_negative)
-    r = u * isr
-    t = -r
-    r = cmove(r, t, r.is_negative()) # abs(rep)
-    return r
+clean:
+	rm -f *.out *.vec

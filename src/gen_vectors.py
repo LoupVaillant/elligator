@@ -11,7 +11,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2020-2021, Loup Vaillant
+# Copyright (c) 2020-2022, Loup Vaillant
 # All rights reserved.
 #
 #
@@ -41,7 +41,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Written in 2020-2021 by Loup Vaillant
+# Written in 2020-2022 by Loup Vaillant
 #
 # To the extent possible under law, the author(s) have dedicated all copyright
 # and related neighboring rights to this software to the public domain
@@ -51,6 +51,19 @@
 # with this software.  If not, see
 # <https://creativecommons.org/publicdomain/zero/1.0/>
 
+import sys
+
+# collect arguments
+if len(sys.argv) < 3:
+    raise ValueError('Usage: gen_vectors.py curve vectors')
+curve   = sys.argv[1]
+vectors = sys.argv[2]
+
+# Import curve module
+if curve == "curve25519": from curve25519 import *
+else: raise ValueError('')
+
+# remaining imports
 from elligator import *
 from random    import randrange
 from random    import seed
@@ -113,8 +126,9 @@ def on_curve():
         u = GF(randrange(0, GF.p - 1))
     return u
 
-def reverse_map_vectors_fail():
+def reverse_map_vectors_fail(pad):
     """Test vectors for 2 opposite failing points"""
+    p = "%02x:" % (pad)
     u = on_curve()
     r = reverse_map(u, False)
     while not r is None:
@@ -122,12 +136,13 @@ def reverse_map_vectors_fail():
         r = reverse_map(u, False)
     if not reverse_map(u, True) is None:
         raise ValueError('Reverse map should fail')
-    v_pos = vectors_to_string([u, False, "ff:", "00:"])
-    v_neg = vectors_to_string([u, True , "ff:", "00:"])
+    v_pos = vectors_to_string([u, False, p, "ff:", ":"])
+    v_neg = vectors_to_string([u, True , p, "ff:", ":"])
     return v_pos + "\n\n" + v_neg
 
 def reverse_map_vectors_ok(pad):
     """Test vectors for 2 opposite succeeding points"""
+    p = "%02x:" % (pad)
     u  = on_curve()
     rp = reverse_map(u, False)
     while rp is None:
@@ -135,30 +150,37 @@ def reverse_map_vectors_ok(pad):
         rp = reverse_map(u, False)
     rn = reverse_map(u, True)
     if rn is None: raise ValueError('Reverse map should succeed')
-    v_pos = vectors_to_string([u, False, "00:", rp.to_num() + pad * 2**GF.msb])
-    v_neg = vectors_to_string([u, True , "00:", rn.to_num() + pad * 2**GF.msb])
+    v_pos = vectors_to_string([u, False, p, "00:", rp.to_num()+pad*2**GF.msb])
+    v_neg = vectors_to_string([u, True , p, "00:", rn.to_num()+pad*2**GF.msb])
     return v_pos + "\n\n" + v_neg
 
 def reverse_map_all_vectors():
     """All test vectors for the reverse map"""
     seed(12345)  # cheap determinism for the random test vectors
     vectors = []
+    max_pad = GF.max_pad * 2 # because all representatives are positive
 
     # point (0, 0) maps to representative 0
-    vectors.append(vectors_to_string([0, False, "00:", 0]))
+    for pad in range(max_pad):
+        p = "%02x:" % (pad)
+        vectors.append(vectors_to_string([0, False, p,"00:", pad*2**GF.msb]))
 
     # some points that do not map
     for i in range(16):
-        vectors.append(reverse_map_vectors_fail())
+        pad = i % max_pad
+        vectors.append(reverse_map_vectors_fail(pad))
 
     # lots of points that do map
-    max_pad = GF.max_pad * 2 # because all representatives are positive
     for i in range(256):
         pad = i % max_pad
         vectors.append(reverse_map_vectors_ok(pad))
 
     return "\n\n".join(vectors)
 
+
+##############
+# Scalarmult #
+##############
 def scalarmult_vectors(scalar, c):
     scalar -= scalar % 8
     scalar += c
@@ -177,16 +199,12 @@ def scalarmult_all_vectors():
         vectors.append(scalarmult_vectors(scalar, c))
     return "\n\n".join(vectors)
 
-def gen_vectors(prefix):
-    """Print every test vectors to files
 
-    - prefix + '_direct.vec'
-    - prefix + '_reverse.vec'
-    - prefix + '_scalarmult.vec'
-    """
-    with open(prefix + '_direct.vec', 'w') as f:
-        f.write(direct_map_all_vectors())
-    with open(prefix + '_reverse.vec', 'w') as f:
-        f.write(reverse_map_all_vectors())
-    with open(prefix + '_scalarmult.vec', 'w') as f:
-        f.write(scalarmult_all_vectors())
+################
+# Main program #
+################
+vectors_map = {"direct"    : direct_map_all_vectors,
+               "reverse"   : reverse_map_all_vectors,
+               "scalarmult": scalarmult_all_vectors,
+               }
+print(vectors_map[vectors]())

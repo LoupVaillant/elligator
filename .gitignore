@@ -3,4 +3,5 @@ _ussm/tmp/
 __pycache__/
 *~
 *.vec
+*.out
 
