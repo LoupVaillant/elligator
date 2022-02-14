@@ -46,7 +46,7 @@ Some conditions must hold:
 - The finite field the curve is based on must have an odd
   characteristic.
   That is, not a binary field.
-  In practice, most curves use large prime fields, which are all odd.
+  In practice most curves use large prime fields, which are all odd.
   While extension fields and binary fields can sometimes be faster,
   prime fields have a more compelling security story.
 
@@ -136,18 +136,19 @@ Before actually defining the maps, we need to fix those parameters.
   or the set of positive field elements.
   A square <var>s</var> in GF(<var>q</var>) always has two square roots:
   &radic;<var>s</var> and &minus;&radic;<var>s</var>.
-  We need a way to determine which is which for the direct and inverse
-  map to be deterministic.
+  We need a way to determine which is the positive one for the direct
+  and inverse map to be deterministic.
 
   For prime fields GF(<var>p</var>) where
-  <var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4), we can just chose
-  <var>s</var><sup>(<var>p</var>+1)/4</sup>.
+  <var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4), we can just say
+  <var>s</var><sup>(<var>p</var>+1)/4</sup> is positive.
   For other prime fields,
   where <var>p</var>&nbsp;&equiv;&nbsp;1&nbsp;(mod&nbsp;4),
-  we generally fall back to the set
-  {0,&nbsp;1,&nbsp;…&nbsp;(<var>p</var>&minus;1)/2},
-  or (as is done in the Ed25519 signature scheme) the set of even
-  numbers.
+  we chose the set of principal square roots (positive field elements)
+  somewhat arbitrarily.
+  Common choices are the set
+  {0,&nbsp;1,&nbsp;…&nbsp;(<var>p</var>&minus;1)/2}
+  or the set of even numbers.
 
 <aside>
 For the implementation of square roots and checking whether a number is
@@ -349,7 +350,7 @@ In practice, `clamp` does two things:
 
 - It makes sure the highest non-zero bit is always in the same position.
   This [mitigates some side channel attacks][clamp] that may occur with some
-  faulty implentations.
+  faulty implementations.
 - It clears the lowest bits (3 for Curve25519, 2 for Curve448),
   so `clamp`(<var>s</var>) is a multiple of the cofactor <var>h</var>.
   This is the part that ignores the low order component.
@@ -394,7 +395,7 @@ Actually,
 since key exchange clears the cofactor,
 the two methods do not have to yield the exact same results to be
 compatible.
-The reason we strongly recommend not just compatible,
+The reason we strongly recommend not only compatible,
 but _identical_ outputs,
 is because it is much easier to test.
 </aside>
