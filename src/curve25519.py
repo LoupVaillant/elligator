@@ -103,8 +103,8 @@ def inv_sqrt(x):
     isr       = cmove(isr, isr * sqrt_m1, m_sqrt_m1)
     return isr, is_square
 
-core.sqrt       = sqrt
-core.inv_sqrt   = inv_sqrt
+core.sqrt     = sqrt
+core.inv_sqrt = inv_sqrt
 
 
 ####################
@@ -117,6 +117,13 @@ core.B = GF(1)
 # Twisted Edwards constants
 core.D_e = GF(-121665) / GF(121666)
 core.A_e = GF(-1)
+
+# correspondance between Edwards p Montgomery curves
+def from_edwards(point):
+    x, y, z = point  # in projective coordinates
+    return (z + y) / (z - y)
+
+core.from_edwards = from_edwards
 
 # curve order and cofactor
 # co_clear is choosen such that for all x:

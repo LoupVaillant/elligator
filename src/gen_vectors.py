@@ -74,17 +74,7 @@ from random    import seed
 ##############
 def direct_map_vectors(r, pad):
     """One set of test vectors for the direct map"""
-    p1   = map(r)
-    p2   = map(-r)
-    p3   = fast_map(r)
-    u, v = p1
-    r1   = rev_map     (u, v.is_negative())
-    r2   = fast_rev_map(u, v.is_negative())
-    if p1 != p2: raise ValueError('p mismatch (map vs fast_map)')
-    if p1 != p3: raise ValueError('p mismatch (r vs -r)')
-    if r1 != r2: raise ValueError('r mismatch (rev_map vs fast_rev_map')
-    if r  != r1: raise ValueError("r mismatch (round trip failure)")
-
+    u, v = dir_map(r)
     return vectors_to_string([
         r.to_num() + pad * 2**GF.msb,
         u,
@@ -114,12 +104,6 @@ def direct_map_all_vectors():
 ###############
 # Reverse map #
 ###############
-def reverse_map(u, v_is_negative):
-    r1 = rev_map     (u, v_is_negative)
-    r2 = fast_rev_map(u, v_is_negative)
-    if r1 != r2: raise ValueError('r mismatch (rev_map vs fast_rev_map)')
-    return r1
-
 def on_curve():
     u = GF(randrange(0, GF.p - 1))
     while not is_square(u**3 + A * u**2 + B * u):
@@ -130,11 +114,11 @@ def reverse_map_vectors_fail(pad):
     """Test vectors for 2 opposite failing points"""
     p = "%02x:" % (pad)
     u = on_curve()
-    r = reverse_map(u, False)
+    r = rev_map(u, False)
     while not r is None:
         u = on_curve()
-        r = reverse_map(u, False)
-    if not reverse_map(u, True) is None:
+        r = rev_map(u, False)
+    if not rev_map(u, True) is None:
         raise ValueError('Reverse map should fail')
     v_pos = vectors_to_string([u, False, p, "ff:", ":"])
     v_neg = vectors_to_string([u, True , p, "ff:", ":"])
@@ -144,11 +128,11 @@ def reverse_map_vectors_ok(pad):
     """Test vectors for 2 opposite succeeding points"""
     p = "%02x:" % (pad)
     u  = on_curve()
-    rp = reverse_map(u, False)
+    rp = rev_map(u, False)
     while rp is None:
         u  = on_curve()
-        rp = reverse_map(u, False)
-    rn = reverse_map(u, True)
+        rp = rev_map(u, False)
+    rn = rev_map(u, True)
     if rn is None: raise ValueError('Reverse map should succeed')
     v_pos = vectors_to_string([u, False, p, "00:", rp.to_num()+pad*2**GF.msb])
     v_neg = vectors_to_string([u, True , p, "00:", rn.to_num()+pad*2**GF.msb])
@@ -181,22 +165,17 @@ def reverse_map_all_vectors():
 ##############
 # Scalarmult #
 ##############
-def scalarmult_vectors(scalar, c):
-    scalar -= scalar % 8
-    scalar += c
-    return vectors_to_string([
-        scalar,
-        scalarmult(scalar, c)
-    ])
-
 def scalarmult_all_vectors():
     """All test vectors for scalar multiplication"""
     seed(12345)  # cheap determinism for the random test vectors
     vectors = []
     for i in range(64):
-        scalar = randrange(2**(GF.nb_bytes * 8))
         c      = i % cofactor
-        vectors.append(scalarmult_vectors(scalar, c))
+        scalar = randrange(2**(GF.nb_bytes * 8)) // cofactor * cofactor + c
+        vectors.append(vectors_to_string([
+            scalar,
+            scalarmult(scalar, c)
+        ]))
     return "\n\n".join(vectors)
 
 

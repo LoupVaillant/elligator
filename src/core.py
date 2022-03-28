@@ -230,13 +230,6 @@ def ed_scalarmult(point, scalar):
             acc = point_add(acc, projective)
     return acc
 
-def from_edwards(point):
-    """Convert an edwards point to Montgomery space
-
-    u coordinate only, we generally don't need v.
-    """
-    x, y, z = point
-    return (z + y) / (z - y)
 
 ############################################
 # scalar multiplication (Montgomery space) #
@@ -277,24 +270,23 @@ def scalarmult1(scalar, c):
     combined   = clamp(scalar) + co_cleared
     return mt_scalarmult(mt_base_c, combined)
 
-# Double scalar multiplication (reuses EdDSA code)
+# Double scalar multiplication (Edwards space, potentially faster)
+# There are two equivalent ways to select the low order point.
 def scalarmult2(scalar, c):
-    main_point = ed_scalarmult(ed_base, clamp(scalar))
-    low_order  = ed_scalarmult(lop, c)
-    return from_edwards(point_add(main_point, low_order))
-
-# Double scalar multiplication (faster look up for the low order point)
-def scalarmult3(scalar, c):
-    main_point = ed_scalarmult(ed_base, clamp(scalar))
-    low_order  = select_lop(c)
-    return from_edwards(point_add(main_point, low_order))
+    main_point  = ed_scalarmult(ed_base, clamp(scalar))
+    low_order1  = ed_scalarmult(lop, c) # reuse EdDSA code
+    low_order2  = select_lop(c)         # faster constant time selection
+    montgomery1 = from_edwards(point_add(main_point, low_order1))
+    montgomery2 = from_edwards(point_add(main_point, low_order2))
+    if montgomery1 != montgomery2:
+        raise ValueError('Incoherent low order point selection')
+    return montgomery1
 
 # Perform the above scalar multiplications and compare them.
 # All methods are supposed to yield the same results.
 def scalarmult(scalar, c):
     p1 = scalarmult1(scalar, c)
     p2 = scalarmult2(scalar, c)
-    p3 = scalarmult3(scalar, c)
-    if p1 != p2 or p1 != p3:
+    if p1 != p2:
         raise ValueError('Incoherent scalarmult')
     return p1
