@@ -11,7 +11,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Copyright (c) 2020-2022, Loup Vaillant
+# Copyright (c) 2022, Loup Vaillant
 # All rights reserved.
 #
 #
@@ -41,7 +41,7 @@
 #
 # ------------------------------------------------------------------------
 #
-# Written in 2020-2022 by Loup Vaillant
+# Written in 2022 by Loup Vaillant
 #
 # To the extent possible under law, the author(s) have dedicated all copyright
 # and related neighboring rights to this software to the public domain
@@ -57,15 +57,11 @@ from core import *
 ####################
 # field parameters #
 ####################
-GF.p = 2**255 - 19
+GF.p = 2**448 - 2**224 - 1
 
 def is_negative(self):
-    """True iff self is in [p.+1 / 2.. p-1]
-
-    An alternative definition is to just test whether self is odd.
-    """
-    dbl = (self.val * 2) % GF.p
-    return dbl % 2 == 1
+    """True iff self is odd"""
+    return (self.val % GF.p) % 2 == 1
 
 GF.is_negative = is_negative
 
@@ -73,34 +69,29 @@ GF.is_negative = is_negative
 #########################
 # Square root functions #
 #########################
-sqrt_m1 = (GF(2)**((GF.p-1) // 4)).abs() # sqrt(-1)
-
 def sqrt(n):
-    """ Non-negative square root of n
+    """Principal square root of n
 
     If n is not a square, the behaviour is undefined.
 
     To know how it works, refer to https//elligator.org/sqrt
     """
-    root = n**((GF.p+3) // 8)
-    root = cmove(root, root * sqrt_m1, root * root != n)
-    return root.abs() # returns the non-negative square root
+    square = n**((GF.p+1) // 4)
+    square = cmove(square, -square, square.is_negative())
+    return square
 
 def inv_sqrt(x):
     """Inverse square root of x
 
-    Returns (0               , True ) if x is zero.
-    Returns (sqrt(1/x)       , True ) if x is non-zero square.
-    Returns (sqrt(sqrt(-1)/x), False) if x is not a square.
+    Returns (0         , True ) if x is zero.
+    Returns (sqrt( 1/x), True ) if x is non-zero square.
+    Returns (sqrt(-1/x), False) if x is not a square.
 
     The return value is *not* guaranteed to be non-negative.
     """
-    isr       = x**((GF.p - 5) // 8)
-    quartic   = x * isr**2
-    # Use constant time comparisons in production code
-    m_sqrt_m1 = quartic == GF(-1) or quartic == -sqrt_m1
-    is_square = quartic == GF(-1) or quartic == GF(1) or x == GF( 0)
-    isr       = cmove(isr, isr * sqrt_m1, m_sqrt_m1)
+    isr       = x**((GF.p - 3) // 4)
+    chi       = x * isr**2    # x**((p-1)/2) == -1, 0, or 1
+    is_square = chi != GF(-1) # use constant time comparison
     return isr, is_square
 
 core.sqrt     = sqrt
@@ -112,11 +103,11 @@ core.inv_sqrt = inv_sqrt
 #################################################
 def from_edwards(point):
     x, y, z = point  # in projective coordinates
-    return (z + y) / (z - y)
+    return (y + z) / (y - z)
 
 def to_edwards(u):
-    y = (u - GF(1)) / (u + GF(1))
-    x = sqrt((y**2 - GF(1)) / (core.D_e * y**2 + GF(1)))
+    y = (u + GF(1)) / (u - GF(1))
+    x = sqrt((y**2 - GF(1)) / (core.D_e * y**2 - GF(1)))
     return (x, y, GF(1))
 
 core.from_edwards = from_edwards
@@ -127,32 +118,29 @@ core.to_edwards   = to_edwards
 # curve parameters #
 ####################
 # Montgomery constants
-core.A = GF(486662)
+core.A = GF(156326)
 core.B = GF(1)
 
-# Twisted Edwards constants
-core.A_e = GF(-1)
-core.D_e = GF(-121665) / GF(121666)
+# Edwards constants
+core.A_e = GF(1) # 1 -> not twisted
+core.D_e = GF(39082) / GF(39081)
 
 # curve order and cofactor
 # co_clear is choosen such that for all x:
 # - (x * order * co_clear) % order    = 0
 # - (x * order * co_clear) % cofactor = x % cofactor
 # The goal is to preserve the cofactor and eliminate the main factor.
-core.order    = 2**252 + 27742317777372353535851937790883648493
-core.cofactor = 8
-core.co_clear = 5
+core.order    = 2**446-0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d
+core.cofactor = 4
+core.co_clear = 3
 
-# Low order point (of order 8), used to add the cofactor component
-# There are 4 such points, that differ only by the sign of
-# their coordinates: (x, y), (x, -y), (-x, y), (-x, -y)
-# We chose the one whose both coordinates are positive (below GF.p // 2)
-lop_x    = sqrt((sqrt(core.D_e + GF(1)) + GF(1)) / core.D_e)
-lop_y    = -lop_x * sqrt_m1
-core.lop = (lop_x, lop_y, GF(1))
+# Low order point (of order 4), used to add the cofactor component
+# There are 2 such points: (1, 0) and (-1, 0)
+# We chose the one with positive coordinates.
+core.lop = (GF(1), GF(0), GF(1))
 
 # Standard base point, that generates the prime order sub-group
-core.mt_base = GF(9)                     # Montgomery base point
+core.mt_base = GF(5)                     # Montgomery base point
 core.ed_base = to_edwards(core.mt_base)  # Edwards base point
 
 # "Dirty" Base point, that generates the whole curve.
@@ -165,28 +153,23 @@ core.mt_base_c = core.from_edwards(core.ed_base_c)
 # Using tricks to minimise the size of the look up table
 # It's a faster alternative to scalar multiplication.
 #
-# The 8 low order points are as follows:
+# The 4 low order points are as follows:
 #
-# [0]lop = ( 0       ,  1    )
-# [1]lop = ( lop_x   ,  lop_y)
-# [2]lop = ( sqrt(-1), -0    )
-# [3]lop = ( lop_x   , -lop_y)
-# [4]lop = (-0       , -1    )
-# [5]lop = (-lop_x   , -lop_y)
-# [6]lop = (-sqrt(-1),  0    )
-# [7]lop = (-lop_x   ,  lop_y)
+# [0]lop = ( 0,  1)
+# [1]lop = ( 1, -0)
+# [2]lop = (-0, -1)
+# [3]lop = (-1,  0)
 #
 # The select() subroutine takes advantage of the common cyclical
 # patterns in the values of the x and y coordinates.
 def select_lop(i):
-    def select(x, k, i):
+    def select(i):
         r = GF(0)
-        r = cmove(r,  k, (i // 2) % 2 == 1) # bit 1
-        r = cmove(r,  x, (i // 1) % 2 == 1) # bit 0
-        r = cmove(r, -r, (i // 4) % 2 == 1) # bit 2
+        r = cmove(r, GF(1), (i // 1) % 2 == 1) # bit 0
+        r = cmove(r, -r   , (i // 2) % 2 == 1) # bit 1
         return r
-    x = select(lop_x, sqrt_m1, i  )
-    y = select(lop_y, GF(1)  , i+2)
+    x = select(i  )
+    y = select(i+1)
     return (x, y, GF(1))
 
 core.select_lop = select_lop
@@ -194,6 +177,6 @@ core.select_lop = select_lop
 ########################
 # Elligator parameters #
 ########################
-core.Z       = GF(2)               # sqrt(-1) is sometimes faster...
-core.ufactor = -core.Z * sqrt_m1   # ...because then both ufactor
-core.vfactor = sqrt(core.ufactor)  # and vfactor are equal to 1
+core.Z       = GF(-1)
+core.ufactor = -core.Z            # ufactor == 1
+core.vfactor = sqrt(core.ufactor) # vfactor == 1

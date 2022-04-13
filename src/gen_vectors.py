@@ -60,8 +60,9 @@ curve   = sys.argv[1]
 vectors = sys.argv[2]
 
 # Import curve module
-if curve == "curve25519": from curve25519 import *
-else: raise ValueError('')
+if   curve == "curve25519": from curve25519 import *
+elif curve == "curve448"  : from curve448   import *
+else: raise ValueError('Uknnown curve module')
 
 # remaining imports
 from elligator import *

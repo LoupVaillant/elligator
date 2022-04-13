@@ -64,7 +64,8 @@ class GF():
     This class is supposed to be derived,
     so the prime number p is defined
 
-    the fowlowing is not implemented, and must be defined in derived classes:
+    the fowlowing is not implemented, and must be defined
+    with inheritance or monkey patching:
     - p                 : characteristic of the field
     - is_negative(self) : set of negative field elements
     """
@@ -96,6 +97,9 @@ class GF():
 
     def to_num(self):
         return self.val % self.p
+
+    def __str__ (self): return str(self.to_num())
+    def __repr__(self): return str(self.to_num())
 
 def to_hex(n):
     """Converts a number in hexadecimal (little endian)"""
@@ -179,23 +183,19 @@ def cmove(a, b, move):
 
 
 #########################################
-# scalar multiplication (Edwards space) #
+# Scalar multiplication (Edwards space) #
 #########################################
-
-# Twisted Edwards equation (A_e and D_e defined by the curve):
-# A_e*x^2 + y^2 = 1 + D_e*x^2*y^2
 
 def point_add(p1, p2):
     """Point addition, using projective coordinates
 
     Formula with affine coordinates:
         denum = d*x1*x2*y1*y2
-        x     = (x1*y2 + x2*y1) / (1 + denum)
-        y     = (y1*y2 + x1*x2) / (1 - denum)
+        x     = (x1*y2 +   x2*y1) / (1 + denum)
+        y     = (y1*y2 - a*x1*x2) / (1 - denum)
 
     We use projective coordinates to avoid expensive divisions:
-        P = (X, Y, Z)  -- Projective coordinates
-        p = (x, y)     -- Affine coordinates
+        P = (X, Y, Z)
         x = X / Z
         y = Y / Z
     """
@@ -210,24 +210,29 @@ def point_add(p1, p2):
     zy    = t2 - denum
     return (xt*zy, yt*zx, zx*zy)
 
-def point_add2(p1, p2):
-    """Point addition, using affine coordinates"""
-    x1, y1  = p1
-    x2, y2  = p2
-    z1, z2  = (GF(1), GF(1))
-    x, y, z = point_add((x1, y1, z1), (x2, y2, z2))
-    div     = z.invert()
-    return (x*div, y*div)
+def check_point(p):
+    """Is the point on the curve?
+
+    Check that the point p (in projective coordinates to avoid expensive
+    divisions) matches the following twisted Edwards equation (A_e and
+    D_e defined by the curve): A_e*x^2 + y^2 = 1 + D_e*x^2*y^2
+    """
+    x, y, z = p
+    x2, y2, z2, z4 = (x**2, y**2, z**2, z**4)
+    if (A_e*x2 + y2)*z2 != z4 + D_e*x2*y2:
+        raise ValueError("Point not on the curve!!")
 
 def ed_scalarmult(point, scalar):
     """Scalar multiplication in Edwards space"""
-    projective = (point[0], point[1], GF(1))
-    acc        = (GF(0), GF(1), GF(1))
-    binary     = [int(c) for c in list(format(scalar, 'b'))]
+    check_point(point)
+    acc    = (GF(0), GF(1), GF(1))
+    binary = [int(c) for c in list(format(scalar, 'b'))]
     for i in binary:
         acc = point_add(acc, acc)
+        check_point(acc)
         if i == 1:
-            acc = point_add(acc, projective)
+            acc = point_add(acc, point)
+            check_point(acc)
     return acc
 
 
