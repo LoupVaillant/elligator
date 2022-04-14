@@ -73,31 +73,19 @@ from random    import seed
 ##############
 # Direct map #
 ##############
-def direct_map_vectors(r, pad):
-    """One set of test vectors for the direct map"""
-    u, v = dir_map(r)
-    return vectors_to_string([
-        r.to_num() + pad * 2**GF.msb,
-        u,
-        v,
-        v.is_negative()
-    ])
-
 def direct_map_all_vectors():
     """All test vectors for the direct map"""
     seed(12345)  # cheap determinism for the random test vectors
     vectors = []
-    max_pad = GF.max_pad * 2 # because all representatives are positive
 
     # Representative 0 maps to the point 0, 0
-    for pad in range(max_pad):
-        vectors.append(direct_map_vectors(GF(0), pad))
+    vectors.append(vectors_to_string([0, 0, 0]))
 
     # Random representatives map to their respective point
-    for i in range(256):
-        pad = i % max_pad
-        r   = GF(randrange(0, GF.p - 1)).abs()
-        vectors.append(direct_map_vectors(r, pad))
+    for _ in range(256):
+        r    = GF(randrange(0, GF.p - 1)).abs()
+        u, v = dir_map(r)
+        vectors.append(vectors_to_string([r, u, v]))
 
     return "\n\n".join(vectors)
 
@@ -105,60 +93,43 @@ def direct_map_all_vectors():
 ###############
 # Reverse map #
 ###############
-def on_curve():
+def random_curve_point():
     u = GF(randrange(0, GF.p - 1))
     while not is_square(u**3 + A * u**2 + B * u):
         u = GF(randrange(0, GF.p - 1))
     return u
 
-def reverse_map_vectors_fail(pad):
-    """Test vectors for 2 opposite failing points"""
-    p = "%02x:" % (pad)
-    u = on_curve()
-    r = rev_map(u, False)
-    while not r is None:
-        u = on_curve()
-        r = rev_map(u, False)
-    if not rev_map(u, True) is None:
-        raise ValueError('Reverse map should fail')
-    v_pos = vectors_to_string([u, False, p, "ff:", ":"])
-    v_neg = vectors_to_string([u, True , p, "ff:", ":"])
-    return v_pos + "\n\n" + v_neg
-
-def reverse_map_vectors_ok(pad):
-    """Test vectors for 2 opposite succeeding points"""
-    p = "%02x:" % (pad)
-    u  = on_curve()
-    rp = rev_map(u, False)
-    while rp is None:
-        u  = on_curve()
-        rp = rev_map(u, False)
-    rn = rev_map(u, True)
-    if rn is None: raise ValueError('Reverse map should succeed')
-    v_pos = vectors_to_string([u, False, p, "00:", rp.to_num()+pad*2**GF.msb])
-    v_neg = vectors_to_string([u, True , p, "00:", rn.to_num()+pad*2**GF.msb])
-    return v_pos + "\n\n" + v_neg
-
 def reverse_map_all_vectors():
     """All test vectors for the reverse map"""
     seed(12345)  # cheap determinism for the random test vectors
     vectors = []
-    max_pad = GF.max_pad * 2 # because all representatives are positive
 
     # point (0, 0) maps to representative 0
-    for pad in range(max_pad):
-        p = "%02x:" % (pad)
-        vectors.append(vectors_to_string([0, False, p,"00:", pad*2**GF.msb]))
+    vectors.append(vectors_to_string([0, False, "00:", 0]))
 
     # some points that do not map
     for i in range(16):
-        pad = i % max_pad
-        vectors.append(reverse_map_vectors_fail(pad))
+        u = random_curve_point()
+        r = rev_map(u, False)
+        while not r is None:
+            u = random_curve_point()
+            r = rev_map(u, False)
+        if not rev_map(u, True) is None:
+            raise ValueError('Reverse map should fail')
+        vectors.append(vectors_to_string([u, False, "ff:", ":"]))
+        vectors.append(vectors_to_string([u, True , "ff:", ":"]))
 
     # lots of points that do map
     for i in range(256):
-        pad = i % max_pad
-        vectors.append(reverse_map_vectors_ok(pad))
+        u  = random_curve_point()
+        rp = rev_map(u, False)
+        while rp is None:
+            u  = random_curve_point()
+            rp = rev_map(u, False)
+        rn = rev_map(u, True)
+        if rn is None: raise ValueError('Reverse map should succeed')
+        vectors.append(vectors_to_string([u, False, "00:", rp]))
+        vectors.append(vectors_to_string([u, True , "00:", rn]))
 
     return "\n\n".join(vectors)
 

@@ -66,14 +66,12 @@ int main(int argc, const char *argv[])
         u8 r[32];
         u8 u[32];
         u8 v[32]; // ignored
-        u8 n[32]; // ignored
         u8 u2[32];
         int status = 0;
         unsigned nb_tests = 0;
         while (read_vector(r, f)) {
             read_vector(u, f);
             read_vector(v, f); // ignored
-            read_vector(n, f); // ignored
             crypto_hidden_to_curve(u2, r);
             status |= memcmp(u, u2, 32);
             nb_tests++;
@@ -85,7 +83,6 @@ int main(int argc, const char *argv[])
         FILE *f = fopen(argv[2], "r");
         u8 u[32];
         u8 n[32];
-        u8 p[32];
         u8 s[32];
         u8 r[32];
         u8 r2[32];
@@ -93,12 +90,13 @@ int main(int argc, const char *argv[])
         unsigned nb_tests = 0;
         while (read_vector(u, f)) {
             read_vector(n, f);
-            read_vector(p, f);
             read_vector(s, f);
             read_vector(r, f);
-            int success = crypto_curve_to_hidden(r2, u, n[0] | (p[0] << 6));
-            status |= (u8)success != s[0];
-            status |= memcmp(r, r2, 32);
+            int failed = crypto_curve_to_hidden(r2, u, n[0]);
+            status |= (u8)failed != s[0];
+            if (!failed) {
+                status |= memcmp(r, r2, 32);
+            }
             nb_tests++;
         }
         conclude(status, "reverse map", nb_tests);
