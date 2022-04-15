@@ -315,10 +315,12 @@ Those two key exchanges have the same structure:
 - They both "clamp" the scalar in the same way.
 - They both use an x-only Montgomery ladder,
   which ignores the sign of the point.
-  That is, <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
+  That is,
+  they act as if
+  <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
   and
   &minus;<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;&minus;<var>v</var>)
-  are considered the same point.
+  were the same point.
   In practice, this means we can ignore <var>v</var> altogether.
 
 The key exchange itself proceeds as follows:
@@ -431,8 +433,6 @@ We start with the following:
   It must be of order <var>h</var>.
   Curve25519 has 4 suitable candidates.
   Curve448 has 2.
-  We can pick any of those,
-  but some choices are slightly easier to implement than others.
 
 The Edwards point
 <var>E</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>) is generated
@@ -450,9 +450,13 @@ small precomputed table.
 Once <var>E</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>) is
 generated,
 we convert it to the Montgomery point
-<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>):
-
-- <var>u</var>&nbsp;=&nbsp;(1&nbsp;+&nbsp;<var>y</var>)&nbsp;/&nbsp;(1&nbsp;&minus;&nbsp;<var>y</var>)
+<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>).
+The conversion formula depends on the curve.
+Curve25519 uses
+<var>u</var>&nbsp;=&nbsp;(1&nbsp;+&nbsp;<var>y</var>)&nbsp;/&nbsp;(1&nbsp;&minus;&nbsp;<var>y</var>),
+while Curve448 may use
+<var>u</var>&nbsp;=&nbsp;(<var>y</var>&nbsp;+&nbsp;1)&nbsp;/&nbsp;(<var>y</var>&nbsp;&minus;&nbsp;1)
+instead.
 
 <aside>
 We don't need the <var>v</var> coordinate here.
@@ -522,67 +526,151 @@ This gives us the exact same point <var>P</var> as method&nbsp;1.
 Table of additional curve parameters
 ------------------------------------
 
-The above procedure requires additional information about the curve
+The above procedure requires more information about the curve
 than is usually provided.
 For the two most common curves Elligator can be applied to,
 the required parameters are provided here.
 
-For **curve25519** (Montgomery form):
+For **curve25519** (Montgomery form,
+<var>v</var><sup>2</sup>&nbsp;=&nbsp;<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u</var>
+over GF(p)):
 
 <table>
-<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
-<tbody>
-<tr><td><var>G</var></td><td>Point (encoded x-coordinate)</td><td><code>34 fc 6c b7 c8 de 58 97 77 70 d9 52 16 cc dc 6c 85 90 be cd 91 9c 07 59 94 14 56 3b 4b a4 47 0f</code></td></tr>
-<tr><td><var>n</var></td><td>integer</td><td>578960446&#8203;186580977&#8203;117854925&#8203;043439539&#8203;268569308&#8203;750392608&#8203;480156075&#8203;062836340&#8203;07912</td></tr>
-<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>68 9f ae e7 d2 18 93 c0 b2 e6 bc 17 f5 ce f7 a6 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80</code></td></tr>
-</tbody>
+<tr><td><var>p</var></td><td></td><td>2<sup>255</sup>&nbsp;&minus;&nbsp;19</td></tr>
+<tr><td><var>A</var></td><td></td><td>486662</td></tr>
+<tr><td><var>B</var></td><td></td><td>1</td></tr>
+<tr><td><var><var>&#x2113;</var></var></td><td>Prime order</td><td>2<sup>252</sup>&nbsp;+&nbsp;277423177&#8203;773723535&#8203;358519377&#8203;908836484&#8203;93</td></tr>
+<tr><td><var>h</var></td><td>Cofactor</td><td>8</td></tr>
+<tr><td><var>m</var></td><td><var>m</var>&nbsp;<var>&#x2113;</var>&nbsp;&equiv;&nbsp;1&nbsp;(`mod`&nbsp;<var>h</var>)</td><td>5</td></tr>
+<tr><td><var>G</var></td><td>Base point</td><td>9</td></tr>
+<tr><td><var>K</var></td><td>Special base point</td><td>533158602&#8203;851899190&#8203;892394975&#8203;900859219&#8203;589053932&#8203;612253068&#8203;502929726&#8203;986334918&#8203;75544</td></tr>
 </table>
 
-For **edwards25519** (twisted Edwards form):
+<aside>
+Only the <var>u</var> coordinate of <var>G</var> and <var>K</var> are
+given.
+We don't need <var>v</var>.
+</aside>
+
+For **edwards25519** (twisted Edwards form,
+<var>a</var><var>x</var><sup>2</sup>&nbsp;+&nbsp;<var>y</var><sup>2</sup>&nbsp;=&nbsp;1&nbsp;+&nbsp;<var>d</var><var>x</var><sup>2</sup><var>y</var><sup>2</sup>
+over GF(p)):
 
 <table>
-<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
-<tbody>
-<tr><td><var>C</var></td><td>Point (integer coordinates)</td><td>(143993178&#8203;682001182&#8203;603479343&#8203;205272325&#8203;806188239&#8203;711943452&#8203;612142175&#8203;754167887&#8203;99818, 270738550&#8203;114484064&#8203;931822528&#8203;722565878&#8203;893680426&#8203;757531351&#8203;946374360&#8203;975030340&#8203;2022)</td></tr>
-<tr><td><var>C</var></td><td>Point (compressed)</td><td><code>4a d1 45 c5 46 46 a1 de 38 e2 e5 13 70 3c 19 5c bb 4a de 38 32 99 33 e9 28 4a 39 06 a0 b9 d5 1f</code></td></tr>
-<tr><td><var>n</var></td><td>integer</td><td>578960446&#8203;186580977&#8203;117854925&#8203;043439539&#8203;268569308&#8203;750392608&#8203;480156075&#8203;062836340&#8203;07912</td></tr>
-<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>68 9f ae e7 d2 18 93 c0 b2 e6 bc 17 f5 ce f7 a6 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80</code></td></tr>
-</tbody>
+<tr><td><var>a</var></td><td></td><td>&minus;1</td></tr>
+<tr><td><var>d</var></td><td></td><td>&minus;121665 / 121666</td></tr>
+<tr><td><var>G</var></td><td>Base point</td>
+<td>(151122213&#8203;495354007&#8203;725011514&#8203;095885315&#8203;114540126&#8203;930418572&#8203;060461132&#8203;839498477&#8203;62202,
+463168356&#8203;949264781&#8203;694283940&#8203;034751631&#8203;413079938&#8203;662562256&#8203;157830336&#8203;031652518&#8203;55960)</td></tr>
+<tr><td><var>H</var></td><td>Point of order 8</td>
+<td>(143993178&#8203;682001182&#8203;603479343&#8203;205272325&#8203;806188239&#8203;711943452&#8203;612142175&#8203;754167887&#8203;99818,
+270738550&#8203;114484064&#8203;931822528&#8203;722565878&#8203;893680426&#8203;757531351&#8203;946374360&#8203;975030340&#8203;2022)</td></tr>
 </table>
 
-For **curve448** (Montgomery form):
+<aside>
+Edwards25519 has 4 points of order 8,
+that only differ by the sign of their coordinates.
+Somewhat arbitrarily,
+we decided that <var>H</var> would be the one with positive <var>x</var>
+and <var>y</var> coordinates.
+</aside>
+
+The Montgomery <var>u</var> coordinate maps to the Edwards <var>y</var>
+coordinate with
+<var>u</var>&nbsp;=&nbsp;1&nbsp;+&nbsp;<var>y</var>&nbsp;/&nbsp;1&nbsp;&minus;&nbsp;<var>y</var>.
+
+The suggested Elligator2 parameters are:
 
 <table>
-<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
-<tbody>
-<tr><td><var>G</var></td><td>Point (encoded x-coordinate)</td><td><code>78 91 bd 50 c5 b8 16 f8 34 85 d0 81 e9 19 a8 d7 00 25 d3 51 e5 7a 9d f3 c4 9c df ae 7f 27 6f ed 3b a8 42 b7 fe 73 a8 ff 5b f3 a1 55 c2 c5 17 ba fd a4 79 69 c3 06 4a</code></td></tr>
-<tr><td><var>n</var></td><td>integer</td><td>726838724&#8203;295606890&#8203;549323807&#8203;888004534&#8203;353641360&#8203;687318060&#8203;281490199&#8203;180584015&#8203;846158342&#8203;864783021&#8203;166769503&#8203;853241174&#8203;836366649&#8203;219095023&#8203;438599116</td></tr>
-<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>cc 13 61 ad 4a 0a e3 8d 54 3d 16 37 ca 09 b3 85 40 da 58 bb 26 6d 3b 11 a7 8f 28 f3 fd ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff</code></td></tr>
-</tbody>
+<tr><td><var>Z</var></dt><td>Non square</dt><td>2</dt></tr>
+<tr><td><var>Z<sub>u</sub></var></dt><td>&minus;<var>Z</var>&radic;&minus;1</dt><td>185337218&#8203;652430857&#8203;981713338&#8203;943668698&#8203;957428593&#8203;009725016&#8203;942407498&#8203;577089052&#8203;50445</dt></tr>
+<tr><td><var>Z<sub>v</sub></var></dt><td>&radic;<var>Z<sub>u</sub></dt><td>196811613&#8203;767075059&#8203;568070793&#8203;049885420&#8203;154460665&#8203;159238901&#8203;627440210&#8203;731238297&#8203;84751</dt></tr>
+<tr><td>&radic;<var>F<sup>2</sup><sub>q</sub></var></td><td>Principal square roots</td><td>{0, 1, 2, ..., (<var>p</var>&minus;1)/2}</td></tr>
 </table>
 
-For **edwards448** (twisted Edwards form):
+<aside>
+<var>Z<sub>u</sub> and <var>Z<sub>v</sub> are pre-computed constants
+used on fast Elligator2 implementations.
+</aside>
+
+
+For **curve448** (Montgomery form,
+<var>v</var><sup>2</sup>&nbsp;=&nbsp;<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u</var>
+over GF(p)):
 
 <table>
-<thead><tr><td>Variable</td><td>Type</td><td>Value</td></tr></thead>
-<tbody>
-<tr><td><var>C</var></td><td>Point (integer coordinates)</td><td>(, ) !! TODO apparently this can't *just* be (1, 0)? Monocypher property-based checks fail if I replace `lop_x`, `lop_y` with (1, 0), so this probably has some subtle relationship with curve448 G</td></tr>
-<tr><td><var>C</var></td><td>Point (compressed)</td><td>``</td></tr>
-<tr><td><var>n</var></td><td>integer</td><td>726838724&#8203;295606890&#8203;549323807&#8203;888004534&#8203;353641360&#8203;687318060&#8203;281490199&#8203;180584015&#8203;846158342&#8203;864783021&#8203;166769503&#8203;853241174&#8203;836366649&#8203;219095023&#8203;438599116</td></tr>
-<tr><td><var>n</var></td><td>integer (little-endian byte order)</td><td><code>cc 13 61 ad 4a 0a e3 8d 54 3d 16 37 ca 09 b3 85 40 da 58 bb 26 6d 3b 11 a7 8f 28 f3 fd ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff</code></td></tr>
-</tbody>
+<tr><td><var>p</var></td><td></td><td>2<sup>448</sup>&nbsp;&minus;&nbsp;<sup>224</sup>&nbsp;&minus;&nbsp;1</td></tr>
+<tr><td><var>A</var></td><td></td><td>156326</td></tr>
+<tr><td><var>B</var></td><td></td><td>1</td></tr>
+<tr><td><var><var>&#x2113;</var></var></td><td>Prime order</td><td>2<sup>446</sup>&nbsp;&minus;&nbsp;138180668&#8203;098951153&#8203;520073867&#8203;485154268&#8203;803366924&#8203;748821786&#8203;098945475&#8203;03885</td></tr>
+<tr><td><var>h</var></td><td>Cofactor</td><td>4</td></tr>
+<tr><td><var>m</var></td><td><var>m</var>&nbsp;<var>&#x2113;</var>&nbsp;&equiv;&nbsp;1&nbsp;(`mod`&nbsp;<var>h</var>)</td><td>3</td></tr>
+<tr><td><var>G<sub>u</sub></var></td><td>Base point</td><td>5</td></tr>
+<tr><td><var>K<sub>u</sub></var></td><td>Special base point</td><td>284926390&#8203;974837292&#8203;580902741&#8203;020352466&#8203;934112412&#8203;198492578&#8203;047426886&#8203;951351018&#8203;799021072&#8203;222778755&#8203;168649464&#8203;863442075&#8203;375759097&#8203;193918879&#8203;068423582&#8203;</td></tr>
 </table>
 
-**The points <var>G</var> and <var>C</var> are not nothing-up-my-sleeve
-points.** Unlike the base point, these were chosen basically
-arbitrarily.
-The curve25519/edwards25519 ones match Monocypher.
-The curve448/edwards448 were generated by whatever Sage felt like today
-for the Weierstraß representation of curve448.
+For **edwards448** (Edwards form,
+<var>x</var><sup>2</sup>&nbsp;+&nbsp;<var>y</var><sup>2</sup>&nbsp;=&nbsp;1&nbsp;+&nbsp;<var>d</var><var>x</var><sup>2</sup><var>y</var><sup>2</sup>
+over GF(p)):
 
+<table>
+<tr><td><var>d</var></td><td></td><td>39082 / 39081</td></tr>
+<tr><td><var>G</var></td><td>Base point</td>
+<td>(345397493&#8203;039729516&#8203;374008604&#8203;150537410&#8203;266655260&#8203;075183290&#8203;216406970&#8203;281645695&#8203;073672344&#8203;430481787&#8203;759340633&#8203;221708391&#8203;583424041&#8203;788924124&#8203;567700732,
+363419362&#8203;147803445&#8203;274661903&#8203;944002267&#8203;176820680&#8203;343659030&#8203;140745099&#8203;590306164&#8203;083365386&#8203;343198191&#8203;849338272&#8203;965044442&#8203;230921818&#8203;680526749&#8203;009182721)</td></tr>
+<tr><td><var>H</var></td><td>Point of order 4</td><td>(1, 0)</td></tr>
+</table>
+
+<aside>
+Edwards448 has 2 points of order 4,
+(1, 0) and (-1, 0).
+Somewhat arbitrarily,
+we chose (1, 0).
+</aside>
+
+The Montgomery <var>u</var> coordinate maps to the Edwards <var>y</var>
+coordinate with
+<var>u</var>&nbsp;=&nbsp;<var>y</var>&nbsp;+&nbsp;1&nbsp;/&nbsp;<var>y</var>&nbsp;&minus;&nbsp;1.
+
+<aside>
+This map is different from RFC 7748,
+and <var>G</var> had to be ajdusted accordingly.
+This was necessary to have a working birational map.
+</aside>
+
+The suggested Elligator2 parameters are:
+
+<table>
+<tr><td><var>Z</var></dt><td>Non square</dt><td>&minus;1</dt></tr>
+<tr><td><var>Z<sub>u</sub></var></dt><td>&minus;<var>Z</var></dt><td>1</dt></tr>
+<tr><td><var>Z<sub>v</sub></var></dt><td>&radic;<var>Z<sub>u</sub></dt><td>&minus;1</dt></tr>
+<tr><td>&radic;<var>F<sup>2</sup><sub>q</sub></var></td><td>Principal square roots</td><td>{0, 2, 4, ..., (<var>p</var>&minus;1)}</td></tr>
+</table>
+
+<aside>
+<var>Z<sub>u</sub> and <var>Z<sub>v</sub> are pre-computed constants
+used on fast Elligator2 implementations.
+</aside>
 
 Bridging the Montgomery gap: Mappings for twisted Edwards curves
 ----------------------------------------------------------------
+
+TODO: I believe this section is largely unnedded for Curve25519,
+yet _desperately_ needed for Curve448.
+The Edwards Curve448 equivalent everyone implements is not the one
+described above,
+but one that is _not_ birationally equivalent.
+Instead it is _isogenous_,
+So to get the same results we don't just need to convert back and forth,
+we also need to mess with the scalar (most likely divide it by 2 or 4).
+Thing is,
+doing so may project the low order points to a subset thereof,
+and prevent us from reppresenting all points on the curve.
+It may even force us to implement point addition on the Montgomery side,
+though since we're adding a prime order and a low order point that may
+save us a number of edge cases.
+
+---
 
 Elligator operates over a curve of the form <var>v</var><sup>2</sup>&nbsp;=&nbsp;<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u</var>,
 for which <var>A</var><var>B</var>(<var>A</var><sup>2</sup>&nbsp;&minus;&nbsp;4<var>B</var>)&nbsp;&ne;&nbsp;0.
@@ -602,8 +690,8 @@ If your internal representation uses extended
 they must first be converted to affine coordinates:
 
 1. <var>z</var>&nbsp;=&nbsp;<var>Z</var><sup>&minus;1</sup>,
-1. <var>x</var>&nbsp;=&nbsp;<var>X</var>&middot;<var>Z</var>,
-1. <var>y</var>&nbsp;=&nbsp;<var>Y</var>&middot;<var>Z</var>,
+1. <var>x</var>&nbsp;=&nbsp;<var>X</var>&middot;<var>z</var>,
+1. <var>y</var>&nbsp;=&nbsp;<var>Y</var>&middot;<var>z</var>,
 1. return the affine coordinates (<var>x</var>,&nbsp;<var>y</var>).
 
 <!-- https://tools.ietf.org/html/draft-struik-lwip-curve-representations-00#appendix-C -->
@@ -645,30 +733,6 @@ This can be achieved as follows:
 4. <var>y</var>&nbsp;=&nbsp;(<var>u</var>&nbsp;&minus;&nbsp;1)&middot;(<var>u</var>&nbsp;+&nbsp;1)<sup>&minus;1</sup>,
 5. Construct and return
    <var>P<sub>TEd</sub></var>(<var>x</var>,&nbsp;<var>y</var>).
-
-<aside>
-You may be wondering why Elligator&nbsp;1 is ignored,
-which itself operates over twisted Edwards curves.
-The reason for that is that it is generally accepted
-that Elligator&nbsp;2 is the superior solution to the problem.
-This is because *every* curve that has a point of order&nbsp;2
-supports Elligator&nbsp;2.
-On the other hand, Elligator&nbsp;1 requires a (twisted) Edwards
-curve in a field GF(<var>p</var>) where
-<var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4).
-However, in such fields, the curve parameter &minus;1 is *non-square*.
-This makes it unsuitable for twisted Edwards curves whose curve
-parameter <var>a</var>&nbsp;=&nbsp;&minus;1 because <var>a</var>
-because addition is no longer well-defined for all inputs
-with <var>a</var> being non-square.
-Any good twisted Edwards curve needs
-<var>a</var>&nbsp;=&nbsp;&minus;1 because the fastest known
-point addition formulae require it.
-Therefore, nobody wants to use curves suitable for Elligator&nbsp;1
-because they incur a performance penalty.
-Accordingly, the Curve1174 presented in the Elligator paper has found
-no adoption.
-</aside>
 
 
 Ristretto and Decaf
