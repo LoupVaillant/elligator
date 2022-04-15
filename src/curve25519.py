@@ -99,7 +99,7 @@ def inv_sqrt(x):
     quartic   = x * isr**2
     # Use constant time comparisons in production code
     m_sqrt_m1 = quartic == GF(-1) or quartic == -sqrt_m1
-    is_square = quartic == GF(-1) or quartic == GF(1) or x == GF( 0)
+    is_square = quartic == GF(-1) or quartic == GF(1) or x == GF(0)
     isr       = cmove(isr, isr * sqrt_m1, m_sqrt_m1)
     return isr, is_square
 

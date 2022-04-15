@@ -113,7 +113,8 @@ def dir_map_fast(r):
     u  = u * t3
     u  = u * t2
     u  = u * t1
-    v  = cmove(v, -v, is_square != v.is_negative()) # use constant time XOR
+    t1 = -v
+    v  = cmove(v, t1, is_square != v.is_negative()) # use constant time XOR
     return (u, v)
 
 def rev_map_fast(u, v_is_negative):

@@ -178,5 +178,5 @@ core.select_lop = select_lop
 # Elligator parameters #
 ########################
 core.Z       = GF(-1)
-core.ufactor = -core.Z            # ufactor == 1
-core.vfactor = sqrt(core.ufactor) # vfactor == 1
+core.ufactor = -core.Z            # ufactor ==  1
+core.vfactor = sqrt(core.ufactor) # vfactor == -1
