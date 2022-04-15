@@ -1,0 +1,155 @@
+{
+    title: Explicit Formulas for Elligator&nbsb;2
+    description: Easy and fast implementations for Elligator 2
+}
+
+Explicit Formulas for Elligator&nbsb;2
+======================================
+
+Conditional move
+----------------
+
+We recommend constant time implementations to avoid leaking secrets.
+So instead of writing regular conditionals we use `CMOVE()`.
+
+The `CMOVE(x, y, condition)` operation is a conditional move.
+It means "if condition, assign y to x":
+
+    if condition
+        x = y
+
+
+Inverse square root
+-------------------
+
+The `isr(x)` function implements inverse square root.
+Given a non-zero square <var>s</var> and a non-square <var>n</var>:
+
+- isr(0)&nbsp;=&nbsp;(0, True)
+- isr(<var>s</var>)&nbsp;=&nbsp;(&radic;(1/<var>x</var>), True )
+- isr(<var>n</var>)&nbsp;=&nbsp;(&radic;(<var>k</var>/<var>x</var>), False)
+
+where <var>k</var>&nbsp;=&nbsp;&radic;&minus;1 if
+<var>p</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519),
+and <var>k</var>&nbsp;=&nbsp;&minus;1 if
+<var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4) (Curve448).
+Note the use of <var>Z<sub>u</sub></var> and <var>Z<sub>v</sub></var>
+instead of just <var>Z</var>.
+
+Recommended way to implement isr(<var>x</var>) if
+<var>p</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519):
+
+    isr(x):
+      ir        = x^((p - 5) / 8)
+      quartic   = x * ir^2
+      m_sqrt_m1 = quartic == -1 or quartic == -sqrt_m1
+      is_square = quartic == -1 or quartic == 1 or x == 0
+      CMOVE(ir, ir * sqrt_m1, m_sqrt_m1)
+      return ir, is_square
+
+Recommended way to implement isr(<var>x</var>) if
+<var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4) (Curve448):
+
+    isr(x):
+      ir        = x^((p - 3) / 4)
+      chi       = x * ir^2
+      is_square = chi != -1
+      return ir, is_square
+
+<aside>
+We don't cover cases where
+<var>p</var>&nbsp;&equiv;&nbsp;1&nbsp;(mod&nbsp;8).
+Good luck.
+</aside>
+
+
+The direct map
+--------------
+
+Compute the point (<var>u</var>,&nbsp;<var>v</var>) from the
+representative <var>r</var>:
+
+- <var>w</var>&nbsp;=&nbsp;&minus;<var>A</var>&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var>&nbsp;<var>r</var><sup>2</sup>)
+- <var>e</var>&nbsp;=&nbsp;`legendre`(<var>w</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>w</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>w</var>)
+- <var>u</var>&nbsp;=&nbsp;<var>e</var>&nbsp;<var>w</var>&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;<var>e</var>)&nbsp;(<var>A</var>&nbsp;/&nbsp;2)
+- <var>v</var>&nbsp;=&nbsp;&minus;<var>e</var>&nbsp;&radic;(<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>u</var>)
+- <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</varsity>)
+
+Recommended way to implement the above:
+
+    u      = r^2
+    t1     = u × Z
+    v      = t1 + 1
+    t2     = v^2
+    t3     = A^2
+    t3     = t3 × t1
+    t3     = t3 - t2
+    t3     = t3 × A
+    t1     = t2 × v
+    t1, s? = isr(t3 × t1)
+    u      = u × Zu
+    v      = r × Zv
+    CMOVE(u, 1, s?)
+    CMOVE(v, 1, s?)
+    v      = v × t3
+    v      = v × t1
+    t1     = t1^2
+    u      = u × -A
+    u      = u × t3
+    u      = u × t2
+    u      = u × t1
+    t1 = -v
+    CMOVE(v, t1, is_square XOR is_negative(v))
+    P      = (u, v)
+
+
+The inverse map
+---------------
+
+If the point
+<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
+satisfies the following:
+
+- <var>u</var>&nbsp;&ne;&nbsp;&minus;A;
+- &minus;<var>Z</var><var>u</var>(<var>u</var>&nbsp;+&nbsp;<var>A</var>)
+  is a square;
+- if <var>v</var>&nbsp;=&nbsp;0,
+  then <var>u</var>&nbsp;=&nbsp;0 as well.
+
+Then the representative of <var>P</var> is computed thus:
+
+- If <var>v</var> is a principal square root,
+  <var>r</var>&nbsp;=&nbsp;&radic;(&minus;<var>u</var>&nbsp;/&nbsp;(<var>Z</var>&nbsp;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)))
+- If <var>v</var> is _not_ a principal square root,
+  <var>r</var>&nbsp;=&nbsp;&radic;(&minus;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)&nbsp;/&nbsp;(<var>Z</var>&nbsp;<var>u</var>))
+
+The recommended way to test the elligibility of a point
+<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
+and compute its representative <var>r</var> is:
+
+    (u, v) = P
+    t =  u + A
+    r = -Z × u
+    r =  r × t
+    isr, s? = inv_sqrt(r)
+    if not s?:
+        P has no representative, return nothing.
+    CMOVE(u, t, is_negative(v))
+    r = u × isr
+    t = -r
+    CMOVE(r, -r, is_negative(r))
+    return r
+
+<aside>
+We don't need to know <var>v</var>,
+only its sign –which is generally randomised anyway.
+</aside>
+
+<aside>
+The conditional is not constant time.
+This is okay,
+because we are supposed to select another random point from scratch and
+start over at this point.
+Assuming the random selection is secure,
+this only reveals how many times we tried.
+</aside>
