@@ -568,7 +568,7 @@ over GF(p)):
 </table>
 
 <aside>
-Edwards25519 has 4 points of order 8,
+Edwards25519 has 4&nbsp;points of order&nbsp;8
 that only differ by the sign of their coordinates.
 Somewhat arbitrarily,
 we decided that <var>H</var> would be the one with positive <var>x</var>
@@ -618,14 +618,14 @@ over GF(p)):
 <tr><td><var>G</var></td><td>Base point</td>
 <td>(345397493&#8203;039729516&#8203;374008604&#8203;150537410&#8203;266655260&#8203;075183290&#8203;216406970&#8203;281645695&#8203;073672344&#8203;430481787&#8203;759340633&#8203;221708391&#8203;583424041&#8203;788924124&#8203;567700732,
 363419362&#8203;147803445&#8203;274661903&#8203;944002267&#8203;176820680&#8203;343659030&#8203;140745099&#8203;590306164&#8203;083365386&#8203;343198191&#8203;849338272&#8203;965044442&#8203;230921818&#8203;680526749&#8203;009182721)</td></tr>
-<tr><td><var>H</var></td><td>Point of order 4</td><td>(1, 0)</td></tr>
+<tr><td><var>H</var></td><td>Point of order 4</td><td>(1,&nbsp;0)</td></tr>
 </table>
 
 <aside>
 Edwards448 has 2 points of order 4,
-(1, 0) and (-1, 0).
+(1,&nbsp;0) and (-1,&nbsp;0).
 Somewhat arbitrarily,
-we chose (1, 0).
+we chose (1,&nbsp;0).
 </aside>
 
 The Montgomery <var>u</var> coordinate maps to the Edwards <var>y</var>
