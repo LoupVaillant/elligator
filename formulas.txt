@@ -26,7 +26,7 @@ The `isr(x)` function implements inverse square root.
 Given a non-zero square <var>s</var> and a non-square <var>n</var>:
 
 - isr(0)&nbsp;=&nbsp;(0, True)
-- isr(<var>s</var>)&nbsp;=&nbsp;(&radic;(1/<var>x</var>), True )
+- isr(<var>s</var>)&nbsp;=&nbsp;(&radic;(1/<var>x</var>), True)
 - isr(<var>n</var>)&nbsp;=&nbsp;(&radic;(<var>k</var>/<var>x</var>), False)
 
 where <var>k</var>&nbsp;=&nbsp;&radic;&minus;1 if
@@ -73,7 +73,7 @@ representative <var>r</var>:
 - <var>e</var>&nbsp;=&nbsp;`legendre`(<var>w</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>w</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>w</var>)
 - <var>u</var>&nbsp;=&nbsp;<var>e</var>&nbsp;<var>w</var>&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;<var>e</var>)&nbsp;(<var>A</var>&nbsp;/&nbsp;2)
 - <var>v</var>&nbsp;=&nbsp;&minus;<var>e</var>&nbsp;&radic;(<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>u</var>)
-- <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</varsity>)
+- <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
 
 Recommended way to implement the above:
 
