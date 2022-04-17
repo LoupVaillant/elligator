@@ -22,12 +22,12 @@ It means "if condition, assign y to x":
 Inverse square root
 -------------------
 
-The `isr(x)` function implements inverse square root.
+The `isr`(<var>x</var>) function implements inverse square root.
 Given a non-zero square <var>s</var> and a non-square <var>n</var>:
 
-- isr(0)&nbsp;=&nbsp;(0, True)
-- isr(<var>s</var>)&nbsp;=&nbsp;(&radic;(1/<var>x</var>), True)
-- isr(<var>n</var>)&nbsp;=&nbsp;(&radic;(<var>k</var>/<var>x</var>), False)
+- `isr`(0)&nbsp;=&nbsp;(0, True)
+- `isr`(<var>s</var>)&nbsp;=&nbsp;(&radic;(1/<var>x</var>), True)
+- `isr`(<var>n</var>)&nbsp;=&nbsp;(&radic;(<var>k</var>/<var>x</var>), False)
 
 where <var>k</var>&nbsp;=&nbsp;&radic;&minus;1 if
 <var>p</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519),
@@ -36,10 +36,10 @@ and <var>k</var>&nbsp;=&nbsp;&minus;1 if
 Note the use of <var>Z<sub>u</sub></var> and <var>Z<sub>v</sub></var>
 instead of just <var>Z</var>.
 
-Recommended way to implement isr(<var>x</var>) if
+Recommended way to implement `isr`(<var>x</var>) if
 <var>p</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519):
 
-    isr(x):
+    isr(x)
       ir        = x^((p - 5) / 8)
       quartic   = x * ir^2
       m_sqrt_m1 = quartic == -1 or quartic == -sqrt_m1
@@ -47,10 +47,10 @@ Recommended way to implement isr(<var>x</var>) if
       CMOVE(ir, ir * sqrt_m1, m_sqrt_m1)
       return ir, is_square
 
-Recommended way to implement isr(<var>x</var>) if
+Recommended way to implement `isr`(<var>x</var>) if
 <var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4) (Curve448):
 
-    isr(x):
+    isr(x)
       ir        = x^((p - 3) / 4)
       chi       = x * ir^2
       is_square = chi != -1
@@ -132,7 +132,7 @@ and compute its representative <var>r</var> is:
     r = -Z × u
     r =  r × t
     isr, s? = inv_sqrt(r)
-    if not s?:
+    if not s?
         P has no representative, return nothing.
     CMOVE(u, t, is_negative(v))
     r = u × isr
