@@ -142,11 +142,13 @@ def scalarmult_all_vectors():
     seed(12345)  # cheap determinism for the random test vectors
     vectors = []
     for i in range(64):
-        c      = i % cofactor
-        scalar = randrange(2**(GF.nb_bytes * 8)) // cofactor * cofactor + c
+        c      = i % Mt.cofactor
+        scalar = randrange(2**(GF.nb_bytes * 8))      # lower bits = random
+        scalar = scalar // Mt.cofactor * Mt.cofactor  # lower bits = 0
+        scalar = scalar + c                           # lower bits = c
         vectors.append(vectors_to_string([
             scalar,
-            scalarmult(scalar, c)
+            co_scalarmult(scalar, c)
         ]))
     return "\n\n".join(vectors)
 

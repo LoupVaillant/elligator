@@ -54,6 +54,11 @@
 
 from core import *
 
+A = Mt.A
+B = GF(1)
+# Note that B is not the same coeficient as Montgomery curves.
+# Montgomery curves always set this particular coeficient to 1.
+
 
 ############################
 # Reference Implementation #

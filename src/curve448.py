@@ -54,6 +54,22 @@
 import core
 from core import *
 
+##################
+# Isogeny switch #
+##################
+
+# Traditionally, Ed448 doesn't use X448's birationally equivalent curve,
+# but an isogeny thereof.  This introduces a slight complication when
+# trying to lean on existing Ed448 code.
+#
+# Here I decided to describe both alternatives:
+# - If isogeny is True, we use the standard Ed448 code.
+# - If isogeny is False, we use the birationally equivalent Edwards curve.
+#
+# Both methods generate the exact same results.
+isogeny = True
+
+
 ####################
 # field parameters #
 ####################
@@ -98,81 +114,105 @@ core.sqrt     = sqrt
 core.inv_sqrt = inv_sqrt
 
 
-#################################################
-# Birational map between Edwards and Montgomery #
-#################################################
-def from_edwards(point):
+################################
+# Birational map (and isogeny) #
+################################
+def mt_to_edwards(u):
+    y = (u + GF(1)) / (u - GF(1))
+    x = sqrt((y**2 - GF(1)) / (Ed.d * y**2 - GF(1)))
+    return (x, y, GF(1))
+
+def isogeny_to_ed(point):
+    x, y, z = point
+    x2 = x**2
+    y2 = y**2
+    du = z**2*GF(2) - x2 - y2
+    v  = y2 - x2 # dv, actually. We use v to save space
+    d  = du * v
+    u  = v * x * y * GF(2)*sqrt(Ed.d)
+    v  = (y2 + x2) * du
+    return (u, v, d)
+
+def edwards_to_mt(point):
     x, y, z = point  # in projective coordinates
     return (y + z) / (y - z)
 
-def to_edwards(u):
-    y = (u + GF(1)) / (u - GF(1))
-    x = sqrt((y**2 - GF(1)) / (core.D_e * y**2 - GF(1)))
-    return (x, y, GF(1))
-
-core.from_edwards = from_edwards
-core.to_edwards   = to_edwards
-
 
 ####################
-# curve parameters #
+# Curve parameters #
 ####################
-# Montgomery constants
-core.A = GF(156326)
-core.B = GF(1)
+
+# Montgomery constants (We already assume B = 1)
+Mt.A = GF(156326)
 
 # Edwards constants
-core.A_e = GF(1) # 1 -> not twisted
-core.D_e = GF(39082) / GF(39081)
+Ed.a = GF(1) # 1 -> not twisted
+if isogeny: Ed.d = GF(-39081)
+else      : Ed.d = GF(39082) / GF(39081)
 
 # curve order and cofactor
-# co_clear is choosen such that for all x:
-# - (x * order * co_clear) % order    = 0
-# - (x * order * co_clear) % cofactor = x % cofactor
-# The goal is to preserve the cofactor and eliminate the main factor.
-core.order    = 2**446-0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d
-core.cofactor = 4
-core.co_clear = 3
+Mt.order    = 2**446-0x8335dc163bb124b65129c96fde933d8d723a70aadc873d6d54a7bb0d
+Mt.cofactor = 4
+
+# Standard base point, that generates the prime order sub-group
+Mt.base = GF(5)
+if isogeny:
+    # From RFC 8032
+    Ed.base = (GF(224580040295924300187604334099896036246789641632564134246125461686950415467406032909029192869357953282578032075146446173674602635247710),
+               GF(298819210078481492676017930443930673437544040154080242095928241372331506189835876003536878655418784733982303233503462500531545062832660),
+               GF(1))
+else:
+    # Base point of the (non-standard) birational curve
+    Ed.base = mt_to_edwards(Mt.base)
 
 # Low order point (of order 4), used to add the cofactor component
 # There are 2 such points: (1, 0) and (-1, 0)
 # We chose the one with positive coordinates.
-core.lop = (GF(1), GF(0), GF(1))
-
-# Standard base point, that generates the prime order sub-group
-core.mt_base = GF(5)                     # Montgomery base point
-core.ed_base = to_edwards(core.mt_base)  # Edwards base point
+Ed.lop = (GF( 1), GF(0), GF(1))
 
 # "Dirty" Base point, that generates the whole curve.
 # mt_base_c = mt_base + (lop * co_clear)
-lop_c          = ed_scalarmult(core.lop, core.co_clear)
-core.ed_base_c = point_add(core.ed_base, lop_c)
-core.mt_base_c = core.from_edwards(core.ed_base_c)
+co_clear  = Mt.order % Mt.cofactor # 3
+lop_c     = Ed.scalarmult(Ed.lop, co_clear)
+ed_base   = isogeny_to_ed(Ed.base) if isogeny else Ed.base
+Ed.base_c = Ed.add(ed_base, lop_c)
+Mt.base_c = edwards_to_mt(Ed.base_c)
 
-# Constant time selection of the low order point
-# Using tricks to minimise the size of the look up table
-# It's a faster alternative to scalar multiplication.
-#
-# The 4 low order points are as follows:
-#
-# [0]lop = ( 0,  1)
-# [1]lop = ( 1, -0)
-# [2]lop = (-0, -1)
-# [3]lop = (-1,  0)
-#
-# The select() subroutine takes advantage of the common cyclical
-# patterns in the values of the x and y coordinates.
-def select_lop(i):
-    def select(i):
-        r = GF(0)
-        r = cmove(r, GF(1), (i // 1) % 2 == 1) # bit 0
-        r = cmove(r, -r   , (i // 2) % 2 == 1) # bit 1
-        return r
-    x = select(i  )
-    y = select(i+1)
-    return (x, y, GF(1))
+def add_lop(point, i):
+    """Adding a low order point, fast
 
-core.select_lop = select_lop
+    # Equivalent to the following, except constant time
+    x, y, z = point
+    if i == 0: return  x,  y, z
+    if i == 1: return  y, -x, z
+    if i == 2: return -x, -y, z
+    if i == 3: return -y,  x, z
+    """
+    x, y, z = point
+    l    = (i//1) % 2 == 1
+    h    = (i//2) % 2 == 1
+    x, y = cswap(x, y, l)
+    x    = cmove(x, -x, h)
+    y    = cmove(y, -y, l != h) # use XOR instead of !=
+    return x, y, z
+
+# Replacing the generic Ed.co_scalarmult()
+# with a custom method that uses the fast add_lop()
+# instead of the regular select_lop() then add().
+# This saves a full point addition.
+def co_scalarmult(scalar, c):
+    main_point  = Ed.scalarmult(Ed.base, clamp(scalar))
+    if isogeny:
+        main_point = isogeny_to_ed(main_point)
+    low_order_p = Ed.scalarmult(Ed.lop, c)
+    montgomery1 = edwards_to_mt(Ed.add(main_point, low_order_p)) # slow
+    montgomery2 = edwards_to_mt(add_lop(main_point, c))          # fast
+    if montgomery1 != montgomery2:
+        raise ValueError('Incoherent low order point selection')
+    return montgomery2
+
+Ed.co_scalarmult = co_scalarmult
+
 
 ########################
 # Elligator parameters #

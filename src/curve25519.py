@@ -107,59 +107,54 @@ core.sqrt     = sqrt
 core.inv_sqrt = inv_sqrt
 
 
-#################################################
-# Birational map between Edwards and Montgomery #
-#################################################
-def from_edwards(point):
+##################
+# Birational map #
+##################
+def to_edwards(u):
+    y = (u - GF(1)) / (u + GF(1))
+    x = sqrt((y**2 - GF(1)) / (Ed.d * y**2 + GF(1)))
+    return (x, y, GF(1))
+
+def to_montgomery(point):
     x, y, z = point  # in projective coordinates
     return (z + y) / (z - y)
 
-def to_edwards(u):
-    y = (u - GF(1)) / (u + GF(1))
-    x = sqrt((y**2 - GF(1)) / (core.D_e * y**2 + GF(1)))
-    return (x, y, GF(1))
-
-core.from_edwards = from_edwards
-core.to_edwards   = to_edwards
+Ed.to_mt = to_montgomery
 
 
 ####################
-# curve parameters #
+# Curve parameters #
 ####################
-# Montgomery constants
-core.A = GF(486662)
-core.B = GF(1)
+
+# Montgomery constants (We already assume B = 1)
+Mt.A = GF(486662)
 
 # Twisted Edwards constants
-core.A_e = GF(-1)
-core.D_e = GF(-121665) / GF(121666)
+Ed.a = GF(-1)
+Ed.d = GF(-121665) / GF(121666)
 
 # curve order and cofactor
-# co_clear is choosen such that for all x:
-# - (x * order * co_clear) % order    = 0
-# - (x * order * co_clear) % cofactor = x % cofactor
-# The goal is to preserve the cofactor and eliminate the main factor.
-core.order    = 2**252 + 27742317777372353535851937790883648493
-core.cofactor = 8
-core.co_clear = 5
+Mt.order    = 2**252 + 27742317777372353535851937790883648493
+Mt.cofactor = 8
+
+# Standard base point, that generates the prime order sub-group
+Mt.base = GF(9)                # Montgomery base point
+Ed.base = to_edwards(Mt.base)  # Edwards base point
 
 # Low order point (of order 8), used to add the cofactor component
 # There are 4 such points, that differ only by the sign of
 # their coordinates: (x, y), (x, -y), (-x, y), (-x, -y)
 # We chose the one whose both coordinates are positive (below GF.p // 2)
-lop_x    = sqrt((sqrt(core.D_e + GF(1)) + GF(1)) / core.D_e)
-lop_y    = -lop_x * sqrt_m1
-core.lop = (lop_x, lop_y, GF(1))
-
-# Standard base point, that generates the prime order sub-group
-core.mt_base = GF(9)                     # Montgomery base point
-core.ed_base = to_edwards(core.mt_base)  # Edwards base point
+lop_x       = sqrt((sqrt(Ed.d + GF(1)) + GF(1)) / Ed.d)
+lop_y       = -lop_x * sqrt_m1
+Ed.lop = (lop_x, lop_y, GF(1))
 
 # "Dirty" Base point, that generates the whole curve.
-# mt_base_c = mt_base + (lop * co_clear)
-lop_c          = ed_scalarmult(core.lop, core.co_clear)
-core.ed_base_c = point_add(core.ed_base, lop_c)
-core.mt_base_c = core.from_edwards(core.ed_base_c)
+# Mt.base_c = Mt.base + (lop * co_clear)
+co_clear  = Mt.order % Mt.cofactor # 5
+lop_c     = Ed.scalarmult(Ed.lop, co_clear)
+Ed.base_c = Ed.add(Ed.base, lop_c)
+Mt.base_c = Ed.to_mt(Ed.base_c)
 
 # Constant time selection of the low order point
 # Using tricks to minimise the size of the look up table
@@ -189,7 +184,8 @@ def select_lop(i):
     y = select(lop_y, GF(1)  , i+2)
     return (x, y, GF(1))
 
-core.select_lop = select_lop
+Ed.select_lop = select_lop
+
 
 ########################
 # Elligator parameters #

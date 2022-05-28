@@ -125,7 +125,7 @@ def vectors_to_string(values):
 # Scalar clamping (X25519, X448) #
 ##################################
 def clamp(scalar):
-    clamped = scalar - scalar % cofactor
+    clamped = scalar - scalar % Mt.cofactor
     clamped = clamped % 2**GF.msb
     clamped = clamped + 2**GF.msb
     return clamped
@@ -182,84 +182,130 @@ def cmove(a, b, move):
     else   : return a
 
 
-#########################################
-# Scalar multiplication (Edwards space) #
-#########################################
+#################
+# Edwards curve #
+#################
+class Ed():
+    """Edwards curve (possibly twisted)
 
-def point_add(p1, p2):
-    """Point addition, using projective coordinates
-
-    Formula with affine coordinates:
-        denum = d*x1*x2*y1*y2
-        x     = (x1*y2 +   x2*y1) / (1 + denum)
-        y     = (y1*y2 - a*x1*x2) / (1 - denum)
-
-    We use projective coordinates to avoid expensive divisions:
-        P = (X, Y, Z)
-        x = X / Z
-        y = Y / Z
+    Not really a class.  Think of it as a namespace.
+    The following must be defined with monkey patching:
+    - a         : curve constant
+    - d         : curve constant
+    - lop       : low order point
+    - to_mt     : convertion function from Edwards to montgomery
+    - select_lop: fast low order point selection
     """
-    x1, y1, z1 = p1
-    x2, y2, z2 = p2
-    denum = D_e*x1*x2*y1*y2
-    t1    = z1 * z2
-    t2    = t1**2
-    xt    = t1 * (x1*y2 +     x2*y1)
-    yt    = t1 * (y1*y2 - A_e*x1*x2)
-    zx    = t2 + denum
-    zy    = t2 - denum
-    return (xt*zy, yt*zx, zx*zy)
+    def add(p1, p2):
+        """Point addition, using projective coordinates
 
-def check_point(p):
-    """Is the point on the curve?
+        Formula with affine coordinates:
+            denum = d*x1*x2*y1*y2
+            x     = (x1*y2 +   x2*y1) / (1 + denum)
+            y     = (y1*y2 - a*x1*x2) / (1 - denum)
 
-    Check that the point p (in projective coordinates to avoid expensive
-    divisions) matches the following twisted Edwards equation (A_e and
-    D_e defined by the curve): A_e*x^2 + y^2 = 1 + D_e*x^2*y^2
+        We use projective coordinates to avoid expensive divisions:
+            P = (X, Y, Z)
+            x = X / Z
+            y = Y / Z
+        """
+        x1, y1, z1 = p1
+        x2, y2, z2 = p2
+        denum = Ed.d*x1*x2*y1*y2
+        t1    = z1 * z2
+        t2    = t1**2
+        xt    = t1 * (x1*y2 +        x2*y1)
+        yt    = t1 * (y1*y2 - Ed.a*x1*x2)
+        zx    = t2 + denum
+        zy    = t2 - denum
+        return (xt*zy, yt*zx, zx*zy)
+
+    def check_point(p):
+        """Is the point on the curve?
+
+        Check that the point p (in projective coordinates to avoid
+        expensive divisions) matches the following twisted Edwards
+        equation: a*x^2 + y^2 = 1 + d*x^2*y^2
+        """
+        x, y, z = p
+        x2, y2, z2, z4 = (x**2, y**2, z**2, z**4)
+        if (Ed.a*x2 + y2)*z2 != z4 + Ed.d*x2*y2:
+            raise ValueError("Point not on the curve!!")
+
+    def scalarmult(point, scalar):
+        """Scalar multiplication in Edwards space"""
+        Ed.check_point(point)
+        acc    = (GF(0), GF(1), GF(1))
+        binary = [int(c) for c in list(format(scalar, 'b'))]
+        for i in binary:
+            acc = Ed.add(acc, acc)
+            Ed.check_point(acc)
+            if i == 1:
+                acc = Ed.add(acc, point)
+                Ed.check_point(acc)
+        return acc
+
+    def co_scalarmult(scalar, c):
+        """Scalarmult with cofactor
+
+        Returns a point converted to Montgomery.
+        There are two equivalent ways to select the low order point:
+        - Scalar multiplication
+        - Constant time selection from a table
+        Selecting from a table is generally very simple and fast
+        """
+        main_point  = Ed.scalarmult(Ed.base, clamp(scalar))
+        low_order1  = Ed.scalarmult(Ed.lop, c)
+        low_order2  = Ed.select_lop(c)
+        montgomery1 = Ed.to_mt(Ed.add(main_point, low_order1))
+        montgomery2 = Ed.to_mt(Ed.add(main_point, low_order2))
+        if montgomery1 != montgomery2:
+            raise ValueError('Incoherent low order point selection')
+        return montgomery1
+
+
+####################
+# Montgomery curve #
+####################
+class Mt():
+    """Montgomery curve
+
+    The following must be defined with monkey patching:
+    - A     : curve constant
+    - base_c: special base point that covers the whole curve
+
+    The curve constant B is assumed equal to 1 (it has to be for the
+    Montgomery curve to be compatible with Elligator2).
     """
-    x, y, z = p
-    x2, y2, z2, z4 = (x**2, y**2, z**2, z**4)
-    if (A_e*x2 + y2)*z2 != z4 + D_e*x2*y2:
-        raise ValueError("Point not on the curve!!")
+    def scalarmult(u, scalar):
+        """Scalar multiplication in Montgomery space
 
-def ed_scalarmult(point, scalar):
-    """Scalar multiplication in Edwards space"""
-    check_point(point)
-    acc    = (GF(0), GF(1), GF(1))
-    binary = [int(c) for c in list(format(scalar, 'b'))]
-    for i in binary:
-        acc = point_add(acc, acc)
-        check_point(acc)
-        if i == 1:
-            acc = point_add(acc, point)
-            check_point(acc)
-    return acc
+        This is an "X-only" laddder, that only uses the u coordinate.
+        This conflates points (u, v) and (u, -v).
+        """
+        u2, z2 = GF(1), GF(0) # "zero" point
+        u3, z3 = u    , GF(1) # "one"  point
+        binary = [int(c) for c in list(format(scalar, 'b'))]
+        for b in binary:
+            # Montgomery ladder step:
+            # if b == 0, then (P2, P3) == (P2*2 , P2+P3)
+            # if b == 1, then (P2, P3) == (P2+P3, P3*2 )
+            swap   = b == 1  # Use constant time comparison
+            u2, u3 = cswap(u2, u3, swap)
+            z2, z3 = cswap(z2, z3, swap)
+            u3, z3 = ((u2*u3 - z2*z3)**2, (u2*z3 - z2*u3)**2 * u)
+            u2, z2 = ((u2**2 - z2**2)**2,
+                      GF(4)*u2*z2*(u2**2 + Mt.A*u2*z2 + z2**2))
+            u2, u3 = cswap(u2, u3, swap)
+            z2, z3 = cswap(z2, z3, swap)
+        return u2 / z2
 
+    def co_scalarmult(scalar, c):
+        """Scalarmult with cofactor"""
+        co_cleared = (c % Mt.cofactor) * Mt.order  # cleared main factor
+        combined   = clamp(scalar) + co_cleared
+        return Mt.scalarmult(Mt.base_c, combined)
 
-############################################
-# scalar multiplication (Montgomery space) #
-############################################
-def mt_scalarmult(u, scalar):
-    """Scalar multiplication in Montgomery space
-
-    This is an "X-only" laddder, that only uses the u coordinate.
-    This conflates points (u, v) and (u, -v).
-    """
-    u2, z2 = GF(1), GF(0) # "zero" point
-    u3, z3 = u    , GF(1) # "one"  point
-    binary = [int(c) for c in list(format(scalar, 'b'))]
-    for b in binary:
-        # Montgomery ladder step:
-        # if b == 0, then (P2, P3) == (P2*2 , P2+P3)
-        # if b == 1, then (P2, P3) == (P2+P3, P3*2 )
-        swap   = b == 1  # Use constant time comparison
-        u2, u3 = cswap(u2, u3, swap)
-        z2, z3 = cswap(z2, z3, swap)
-        u3, z3 = ((u2*u3 - z2*z3)**2, (u2*z3 - z2*u3)**2 * u)
-        u2, z2 = ((u2**2 - z2**2)**2, GF(4)*u2*z2*(u2**2 + A*u2*z2 + z2**2))
-        u2, u3 = cswap(u2, u3, swap)
-        z2, z3 = cswap(z2, z3, swap)
-    return u2 / z2
 
 ############################
 # Scalarmult with cofactor #
@@ -269,29 +315,11 @@ def mt_scalarmult(u, scalar):
 # indistinguishable from random.  (Else we'd notice all representatives
 # represent points with cleared cofactor.  Not exactly random.)
 
-# Single scalar multiplication (in Montgomery space)
-def scalarmult1(scalar, c):
-    co_cleared = (c % cofactor) * order  # cleared main factor
-    combined   = clamp(scalar) + co_cleared
-    return mt_scalarmult(mt_base_c, combined)
-
-# Double scalar multiplication (Edwards space, potentially faster)
-# There are two equivalent ways to select the low order point.
-def scalarmult2(scalar, c):
-    main_point  = ed_scalarmult(ed_base, clamp(scalar))
-    low_order1  = ed_scalarmult(lop, c) # reuse EdDSA code
-    low_order2  = select_lop(c)         # faster constant time selection
-    montgomery1 = from_edwards(point_add(main_point, low_order1))
-    montgomery2 = from_edwards(point_add(main_point, low_order2))
-    if montgomery1 != montgomery2:
-        raise ValueError('Incoherent low order point selection')
-    return montgomery1
-
-# Perform the above scalar multiplications and compare them.
+# Perform the different scalar multiplications and compare them.
 # All methods are supposed to yield the same results.
-def scalarmult(scalar, c):
-    p1 = scalarmult1(scalar, c)
-    p2 = scalarmult2(scalar, c)
+def co_scalarmult(scalar, c):
+    p1 = Ed.co_scalarmult(scalar, c)
+    p2 = Mt.co_scalarmult(scalar, c)
     if p1 != p2:
         raise ValueError('Incoherent scalarmult')
     return p1
