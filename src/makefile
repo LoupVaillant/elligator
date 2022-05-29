@@ -51,13 +51,13 @@
 
 CC            = gcc -std=c99
 CFLAGS        = -Wall -Wextra -pedantic -O3
-PYFILES       = core.py curve25519.py curve448.py elligator.py gen_vectors.py
-VECTORS_25519 = curve25519_direct.vec  \
-                curve25519_reverse.vec \
-                curve25519_scalarmult.vec
-VECTORS_448   = curve448_direct.vec  \
-                curve448_reverse.vec \
-                curve448_scalarmult.vec
+PYFILES       = core.py elligator.py gen_vectors.py
+VECTORS_25519 = vec/curve25519_direct.vec  \
+                vec/curve25519_reverse.vec \
+                vec/curve25519_scalarmult.vec
+VECTORS_448   = vec/curve448_direct.vec  \
+                vec/curve448_reverse.vec \
+                vec/curve448_scalarmult.vec
 
 .PHONY: all test clean
 
@@ -68,10 +68,12 @@ test: test25519
 test25519: test25519.out $(VECTORS_25519)
 	./$^
 
-curve25519_%.vec: $(PYFILES)
+vec/curve25519_%.vec: $(PYFILES) curve25519.py
+	mkdir -p vec
 	./gen_vectors.py curve25519 $* >$@
 
-curve448_%.vec: $(PYFILES)
+vec/curve448_%.vec: $(PYFILES) curve448.py
+	mkdir -p vec
 	./gen_vectors.py curve448 $* >$@
 
 test25519.out: test25519.c
