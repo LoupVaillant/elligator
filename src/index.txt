@@ -1,7 +1,0 @@
-{
-  title: Reference source code
-  description: Elligator reference source code
-}
-
-Reference source code
-=====================

@@ -1,0 +1,22 @@
+{
+    title: Known Implementations
+    description: list of know Elligator&nbsp;2 implementations.
+}
+
+Known Elligator&nbsp;2 Implementations
+======================================
+
+- [Kleshni](https://github.com/Kleshni/Elligator-2) implements
+  Elligator&nbsp;2 for Curve25519.
+  However to our knowledge it does not implement the
+  [special key exchange routines](key-exchange) needed to use the
+  inverse map safely.
+- [Libdecaf](https://sourceforge.net/projects/ed448goldilocks/)
+  Implements Elligator&nbsp;2 for Curve25519 and Curve448.
+- [Libsodium](https://libsodium.org) implements the Elligator&nbsp;2
+  direct map for Curve25519 and [Ristretto255](https://ristretto.group).
+- [Monocypher](https://monocypher.org) implements Elligator&nbsp;2 for
+  Curve25519.
+
+Please [contact us](mailto:elligator@loup-vaillant.fr) to have your
+implementation added to this list.

@@ -1,5 +1,7 @@
 #! /bin/sh
 
+set -e
+
 # Clean up
 rm -rf _ussm/tmp* _ussm/www/
 
@@ -9,11 +11,43 @@ for dir in $(ussm-source-dirs); do
     mkdir -p _ussm/www/$dir
 done
 
-# Copy every non-boring files
+# Copy non-boring files
 for file in $(find . -name _ussm -prune -o -type f -print |\
               ussm-remove-boring); do
     ln $file _ussm/www/$file
 done
+
+# remove source code folder (we'll only expose the tarball)
+rm -rf _ussm/www/src
+rm -rf _ussm/tmp/src
+
+# Generate test vectors
+(cd vectors && make && make test)
+
+# Make a tarball for the source code
+# The options here were taken from:
+# https://reproducible-builds.org/docs/archives/#full-example
+# This requires GNU tar.
+# The --mtime value was chosen arbitrarily (same as Monocypher's)
+TARBALL=../_ussm/www/elligator-reference.tar
+#rm $TARBALL  # so we can overwrite it
+(cd vectors && \
+     tar --transform='flags=r;s|^|elligator-reference/|' \
+         --sort=name \
+         --mtime=@1587513600 \
+         --owner=0 --group=0 --numeric-owner \
+         --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
+         -cvf $TARBALL \
+         core.py \
+         curve25519.py \
+         curve448.py \
+         elligator.py \
+         gen_vectors.py \
+         makefile \
+         test25519.c \
+     && \
+     gzip -n $TARBALL # the -n option avoids timestamp metadata
+)
 
 # Run the modules
 ussm-core
@@ -21,13 +55,3 @@ ussm-title
 ussm-description
 ussm-menu         # must be run after ussm-title
 ussm-assemble     # must be run last
-
-# Some multilingual stuff (you may not need it)
-# def_ext=$(ussm-setting source-extension)
-# def_lan=$(ussm-setting default-language)
-#
-# for src in $(ussm-source-files            |\
-#              grep $def_lan"\."$def_ext"$" |\
-#              sed 's/\.'$def_lan'\.'$def_ext'$//'); do
-#     ln _ussm/www/$src.$def_lan.html _ussm/www/$src.html
-# done

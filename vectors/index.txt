@@ -1,0 +1,76 @@
+{
+    title: Test Vectors
+    description: Elligator&nbsp;2 test vectors.
+}
+
+Elligator&nbsp;2 test vectors
+=============================
+
+Test vector files look like the following:
+    bd568cb3a2d38a12:
+    176daa5925e7975e:
+    4e3ec9a72c828900:
+
+    8b5f64295c8ec02f:
+    aea6d1e57cacf85e:
+    4527a25db227f764:
+
+    ...
+
+Each line is either empty,
+or contain a number represented in hexadecimal
+(in Little Endian)
+followed by a colon (`:`).
+
+The non-empty lines describe the input and outputs of test cases.
+The empty lines separate the different test cases.
+
+We have 3 types of tests:
+
+- __Direct map:__ Each test have 3 vectors:
+   1. (input) The representative <var>r</var> of the point.
+   2. (output) The <var>u</var> coordinate of the point.
+   3. (output) The <var>v</var> coordinate of the point.
+
+- __Inverse map:__ Each test have 4 vectors:
+   1. (input) The <var>u</var> coordinate of the point.
+   2. (input) The sign of the <var>v</var> coordinate
+      ("`00:`" if positive, "`01:`" if negative)
+   3. (output) Whether the map should succeed ("`00:`")
+      or fail ("`ff:`")
+   4. (output) The representative of the point,
+      or just "`:`" if the inverse map is supposed to fail.
+
+- __Scalar multiplication:__ Each test have 2 vectors:
+   1. (input) The private key (the scalar <var>s</var>).
+   2. (output) The public key
+      (<var>s</var>&nbsp;.&nbsp;<var>K</var>).
+
+A couple caveats to keep in mind:
+
+- The representatives are _not_ [properly serialised](/key-exchange).
+  They are all positive,
+  and all padding bits are set to zero.
+  Real implementations should make sure that the inverse map makes _all_
+  bits look random,
+  and the direct map can correctly handle out of range inputs
+  (ignore padding bits and/or correctly read negative representatives).
+
+- The scalar multiplications described by the test vectors here produce
+  keys that are compatible with X25519 and X448 respectively,
+  But they're certainly not identical.
+  Do _not_ use regular X25519 or X448 public key generations for keys
+  you intend to hide with the inverse map.
+  Use one of the [special procedures](/key-exchange) we describe
+  instead.
+
+Here are the test vectors, for Curve25519 and Curve448 respectively:
+
+- [curve25519\_direct.vec](curve25519_direct.vec)
+- [curve25519\_inverse.vec](curve25519_inverse.vec)
+- [curve25519\_scalarmult.vec](curve25519_scalarmult.vec)
+- [curve448\_direct.vec](curve448_direct.vec)
+- [curve448\_inverse.vec](curve448_inverse.vec)
+- [curve448\_scalarmult.vec](curve448\_scalarmult.vec)
+
+They are generated with [these scripts](/elligator-reference.tar.gz)

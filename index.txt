@@ -89,6 +89,12 @@ cryptographic protocol elements.
 Show me the code.
 -----------------
 
-A reference implementation in Python can be obtained from:
-[elligator.py](elligator.py)
+We have a list of [known implementations](implementations).
+We also made a [reference implementation](elligator-reference.tar.gz) in
+Python (not for production).
 
+If you want to implement Elligator yourself
+you should read [how Elligator works](map),
+and [how to apply it safely](key-exchange).
+Then you can copy the [explicit formulas](formulas)
+and test it with our [test vectors](vectors).

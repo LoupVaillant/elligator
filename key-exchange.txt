@@ -1,0 +1,490 @@
+{
+    title: Hiding Key Exchanges
+    description: How to use Elligator to hide key exchanges.
+}
+
+Using Elligator to Hide Key Exchanges
+=====================================
+
+Public keys can be distinguished from random noise in several ways,
+and Elligator only addresses one of them.
+To address the others,
+we must avoid a couple death traps.
+
+Properly hiding a key exchange involves four steps:
+
+1. Chose an _ephemeral_ secret key at random,
+   just like you would for a normal key exchange.
+2. Generate a public key from that shared secret
+   with a _special procedure_,
+   described below.
+3. Apply the Elligator&nbsp;2 inverse map to your public key.
+   If it does not work go back to step (1).
+   Otherwise you get its representative.
+4. Serialise the representative into a random-looking byte stream.
+
+<aside>
+Though conceptually steps 3 and 4 are easier to describe separately,
+it is generally a good idea to merge them to simplify the API.
+</aside>
+
+
+Step&nbsp;1: Chose an ephemeral secret key
+------------------------------------------
+
+Though the goal is to hide public keys as random noise,
+it is trivial to detect if you're sending representatives of the same
+key twice.
+Which is why the keys you are trying to hide as random noise must be
+used only once.
+Those are called _ephemeral keys_.
+Ephemeral keys may be used for several exchanges,
+our only constraint is that they're sent only once.
+
+Of course, ephemeral secret keys are chosen at random.
+
+
+Step&nbsp;2: Generate a "special" public key
+--------------------------------------------
+
+Most key exchange algorithms do not work over the whole curve.
+To avoid leaking information public keys always belong to the _prime
+order subgroup_,
+which comprises only a fraction of the curve.
+Eavesdroppers could trivially notice if we only used those,
+so we need a way to generate points on the _whole_ curve
+and somehow make key exchange work regardless.
+
+One obvious way to make it work is to _not_ clear the cofactor.
+This means choosing a base point that generates the whole curve instead
+of the prime order subgroup,
+and choosing a uniformly random scalar between zero and the order of the
+whole curve.
+
+It is more practical however to find a way to be compatible with
+existing key exchange algorithms.
+This lets us retain the proofs and guarantees of the original
+key exchange and streamline the APIs.
+The details depend on the particular key exchange we want to be
+compatible with.
+Here we will give an example based on X25519 and X448.
+
+<aside>
+Okay that was a mouthful.
+To get more familiar with elliptic curves we suggest you watch this
+excellent [&ldquo;ECCHacks&rdquo; talk by Daniel J.&nbsp;Bernstein and
+Tanja Lange][ECCHacks]
+and read this [tutorial about &ldquo;cofactors&rdquo; and &ldquo;prime
+order subgroups&rdquo;][cofactor].
+</aside>
+
+[ECCHacks]: https://media.ccc.de/v/31c3_-_6369_-_en_-_saal_1_-_201412272145_-_ecchacks_-_djb_-_tanja_lange
+[cofactor]: https://loup-vaillant.fr/tutorials/cofactor
+
+### X25519 and X448
+
+Those two key exchanges have the same structure:
+
+- They both use a prime field GF(<var>p</var>),
+  whose characteristic is close to a power of two.
+- The order of their curve is a big prime number <var>&#x2113;</var>,
+  multiplied by a small cofactor <var>h</var>
+  (<var>h</var>&nbsp;=&nbsp;8 for Curve25519,
+  and <var>h</var>&nbsp;=&nbsp;4 for Curve448).
+- They both use a base point <var>G</var> of prime order
+  <var>&#x2113;</var>.
+- They both &ldquo;clamp&rdquo; the scalar in the same way.
+- They both use an x-only Montgomery ladder,
+  which ignores the sign of the point.
+  That is,
+  they act as if
+  <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
+  and
+  &minus;<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;&minus;<var>v</var>)
+  were the same point.
+  In practice, this means we can ignore <var>v</var> altogether.
+
+The key exchange itself proceeds as follows:
+
+- Alice generates a key pair (<var>a</var>,&nbsp;<var>A</var>),
+  and sends <var>A</var> to Bob.
+- Bob generates a key pair (<var>b</var>,&nbsp;<var>B</var>),
+  and sends <var>B</var> to Alice.
+- Alice and Bob compute the shared secret <var>S</var>.
+
+The private keys <var>a</var> and <var>b</var> are random numbers.
+The rest have the following values (the dot denotes scalar
+multiplication):
+
+- <var>A</var>&nbsp;=&nbsp;`clamp`(<var>a</var>)&nbsp;.&nbsp;<var>G</var>
+- <var>B</var>&nbsp;=&nbsp;`clamp`(<var>b</var>)&nbsp;.&nbsp;<var>G</var>
+- <var>S</var>&nbsp;=&nbsp;`clamp`(<var>a</var>)&nbsp;.&nbsp;<var>B</var>&nbsp;=&nbsp;`clamp`(<var>b</var>)&nbsp;.&nbsp;<var>A</var>
+
+The `clamp`() operation is defined thus:
+
+    clamp(s):
+      clamped = s - s % h        # remove low bits
+      clamped = clamped % 2^msb  # remove high bits
+      clamped = clamped + 2^msb  # set high bit
+      return clamped
+
+Where `msb`&nbsp;=&nbsp;254 for Curve25519
+and `msb`&nbsp;=&nbsp;447 for Curve 448.
+This has two effects:
+
+- It fixes the position of the highest non-zero bit.
+  This [mitigates some side channel attacks][clamp] that may occur with
+  some faulty implementations.
+
+[clamp]: https://mailarchive.ietf.org/arch/msg/cfrg/pt2bt3fGQbNF8qdEcorp-rJSJrc/
+
+- It clears the lowest bits (3 for Curve25519, 2 for Curve448),
+  so `clamp`(<var>s</var>) is a multiple of the cofactor <var>h</var>.
+  This avoids leaking information about scalars by ignoring the low
+  order component of points multiplied by a clamped scalar.
+  Every point <var>A</var> is the sum of a prime order point
+  <var>P</var> and a low order point <var>L</var>.
+  Clamping ignores <var>L</var>:
+
+  > `clamp`(<var>s</var>)&nbsp;.&nbsp;<var>A</var>&nbsp;=&nbsp;`clamp`(<var>s</var>)&nbsp;.&nbsp;(<var>P</var>&nbsp;+&nbsp;<var>L</var>)<br/>
+  > `clamp`(<var>s</var>)&nbsp;.&nbsp;<var>A</var>&nbsp;=&nbsp;`clamp`(<var>s</var>)&nbsp;.&nbsp;<var>P</var>&nbsp;+&nbsp;`clamp`(<var>s</var>)&nbsp;.&nbsp;<var>L</var><br/>
+  > `clamp`(<var>s</var>)&nbsp;.&nbsp;<var>A</var>&nbsp;=&nbsp;`clamp`(<var>s</var>)&nbsp;.&nbsp;<var>P</var><br/>
+
+Normal public keys (almost) cover the whole prime order subgroup.
+To cover the whole curve,
+we just need to add a random low order point to it.
+That low-order component will be ignored in key exchanges,
+yielding the same shared secrets as we would have had with the normal
+public key.
+
+<aside>
+Actually,
+normal public keys only cover _half_ of the prime order group
+(this is another effect of clamping).
+But it does so in such a manner that for almost any prime order point
+<var>P</var>,
+either <var>P</var> or &minus;<var>P</var> (and not both) will be
+covered.
+X25519 and X448 get away with this because their scalar multiplication
+ignores the sign of <var>P</var>.
+In practice we can cover the whole prime order group by randomly
+selecting the sign of the public key.
+
+Alternatively,
+we _may_ get away with _preserving_ the sign of the public key instead.
+Even though we would only cover half the curve this way,
+there is (as of 2022) no known fast way to detect which half of the
+curve a public key belongs to.
+This require that we either [recover the sign of the public
+key](https://link.springer.com/content/pdf/10.1007%2F3-540-44709-1_12.pdf),
+or use a scalar multiplication that preserves it.
+</aside>
+
+There are two methods to add a random low order point:
+
+1. Generate a normal public key,
+   then add a random low order point,
+   selected with the clamped bits of the secret key.
+2. Use a generator that generates the whole curve
+   (and not just the prime order subgroup),
+   and tweak the scalar to counter the effects of clamping.
+
+Done right,
+the two methods yield the exact same results.
+
+<aside>
+Actually,
+since key exchange clears the cofactor,
+the two methods do not have to yield the exact same results to be
+compatible.
+The reason we strongly recommend bit-for-bit identical outputs
+is because it is much easier to test.
+</aside>
+
+
+### Method&nbsp;1: add a random low order point
+
+This method is conceptually simple
+but it requires generic point addition,
+which is best done in Edwards space.
+This means performing the scalar multiplication in Edwards space,
+adding the low order point,
+then converting the final results to Montgomery space so Elligator can
+work.
+
+The main advantage of this method is speed.
+Generic Edwards addition allow some impressive
+[optimisations](https://loup-vaillant.fr/tutorials/fast-scalarmult).
+On the other hand,
+this involves a fair bit of code and sizeable pre-computed tables.
+This may be a problem on constrained applications that do not already
+use Edwards code for other purposes,
+like signatures.
+
+We start with the following:
+
+- The random secret bit string <var>s</var>, freshly generated for a
+  single key exchange
+  (256 bits for Curve25519,
+  448 bits for curve448).
+- the cofactor <var>h</var> of the curve
+  (8 for Curve25519,
+  4 for Curve448).
+- The generator <var>G</var> of the prime order group of the curve
+  (the one used in Ed25519 or Ed448).
+- The generator <var>H</var> of the _low_ order group of the curve.
+  It must be of order <var>h</var>.
+  Curve25519 has 4 suitable candidates.
+  Curve448 has 2.
+
+The Edwards point
+<var>E</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>) is generated
+from <var>a</var> as follows:
+
+- <var>E<sub>high</sub></var>&nbsp;=&nbsp;`clamp`(<var>s</var>)&nbsp;.&nbsp;<var>G</var>
+- <var>E<sub>low</sub></var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>h</var>)&nbsp;.&nbsp;<var>H</var>
+- <var>E</var>&nbsp;=&nbsp;<var>E<sub>high</sub></var>&nbsp;+&nbsp;<var>E<sub>low</sub></var>
+
+<aside>
+<var>E<sub>low</sub></var> may be computed with
+[constant time](https://bearssl.org/constanttime.html)
+selection and a very small pre-computed table.
+Ed448 can even avoid the point addition entirely with a conditional swap
+and two conditional negations.
+</aside>
+
+Once <var>E</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>) is
+generated,
+we convert it to the Montgomery point
+<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>).
+The conversion formula depends on the curve.
+
+<aside>
+Ed448 has an additional complication:
+Ed448Goldilocks is not birationally equivalent to Curve448,
+it is _isogenous_.
+Converting it directly effectively introduces a multiplication by two,
+which nullifies the point of order 2.
+We would end up covering only half the curve and defeat the whole point
+of Elligator.
+To counter that we must convert <var>E<sub>high</sub></var> to the
+birationally equivalent Edwards curve _before_ we add
+<var>E<sub>low</sub></var>.
+</aside>
+
+<aside>
+We don't need the <var>v</var> coordinate here.
+It is ignored by the key exchange,
+Elligator only needs its sign,
+and we have to randomly flip that sign anyway to cover the whole curve.
+(We do need <var>v</var> for blind signatures,
+but those are an entirely separate problem.)
+</aside>
+
+Once we have <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;?)
+we just need to check whether it can be mapped
+(this only depends on <var>u</var>).
+If it cannot,
+we try again with a new random scalar <var>s</var>.
+If it can,
+we randomly decide whether <var>v</var> is a principal square root or
+not,
+and apply the inverse map.
+
+
+### Method&nbsp;2: use a generator of the whole curve
+
+This method reuses the x-only Montgomery ladder we use for
+regular key exchanges,
+and allows very compact code.
+On the other hand,
+it is about twice as slow as method&nbsp;1.
+
+We start with the following:
+
+- The random secret bit string <var>s</var>, freshly generated for a
+  single key exchange
+  (same as method&nbsp;1).
+- the cofactor <var>h</var> of the curve
+  (8 for Curve25519,
+  4 for Curve448).
+- The generator <var>G</var> of the prime order group of the curve.
+  We use the same as method&nbsp;1.
+- The generator <var>H</var> of the _low_ order group of the curve.
+  We use the same as method&nbsp;1.
+
+We can then pre-compute the special base point <var>K</var>:
+
+- Find <var>m</var> such that
+  <var>m</var>&nbsp;<var>&#x2113;</var>&nbsp;&equiv;&nbsp;1&nbsp;(`mod`&nbsp;<var>h</var>)
+  (<var>m</var>&nbsp;=&nbsp;5 for X25519,
+  <var>m</var>&nbsp;=&nbsp;3 for X448)
+- <var>K</var>&nbsp;=&nbsp;<var>G</var>&nbsp;+&nbsp;(<var>m</var>&nbsp;.&nbsp;<var>H</var>)
+
+<aside>
+We can compute this in Edwards space,
+then convert the result to a Montgomery point.
+With Curve448, mind the isogeny:
+if you make the addition within Ed448Goldilocks the resulting point will
+not cover the whole curve.
+</aside>
+
+With <var>K</var> hard coded,
+we can compute the rest entirely in Montgomery space,
+with a single scalar multiplication:
+
+- <var>s<sub>clamp</sub></var>&nbsp;=&nbsp;`clamp`(<var>s</var>)
+- <var>s<sub>low</sub></var>&nbsp;=&nbsp;(<var>s</var>&nbsp;`mod`&nbsp;<var>h</var>)&nbsp;<var>&#x2113;</var>
+- <var>P</var>&nbsp;=&nbsp;(<var>s<sub>clamp</sub></var>&nbsp;+&nbsp;<var>s<sub>low</sub></var>)&nbsp;.&nbsp;<var>K</var>
+
+This gives us the exact same point <var>P</var> as method&nbsp;1.
+
+
+### Curve parameters for methods&nbsp;1 and&nbsp;2
+
+Curve25519:
+
+<table>
+<tr><td><var>h</var></td><td>Cofactor</td><td>8</td></tr>
+<tr><td><var>G</var></td><td>Ed25519 base point</td><td>(151122213&#8203;495354007&#8203;725011514&#8203;095885315&#8203;114540126&#8203;930418572&#8203;060461132&#8203;839498477&#8203;62202,
+463168356&#8203;949264781&#8203;694283940&#8203;034751631&#8203;413079938&#8203;662562256&#8203;157830336&#8203;031652518&#8203;55960)</td></tr>
+<tr><td><var>H</var></td><td>Point of order 8 with positive coordinates</td><td>(143993178&#8203;682001182&#8203;603479343&#8203;205272325&#8203;806188239&#8203;711943452&#8203;612142175&#8203;754167887&#8203;99818,
+270738550&#8203;114484064&#8203;931822528&#8203;722565878&#8203;893680426&#8203;757531351&#8203;946374360&#8203;975030340&#8203;2022)</td></tr>
+<tr><td><var>m</var></td><td><var>&#x2113;</var><sup>&minus;1</sup>&nbsp;(<code>mod</code>&nbsp;<var>h</var>)</td><td>5</td></tr>
+<tr><td><var>K</var></td><td>Montgomery <var>u</var> coordinate</td><td>533158602&#8203;851899190&#8203;892394975&#8203;900859219&#8203;589053932&#8203;612253068&#8203;502929726&#8203;986334918&#8203;75544</td></tr>
+</table>
+
+Curve448:
+
+<table>
+<tr><td><var>h</var></td><td>Cofactor</td><td>4</td></tr>
+<tr><td><var>G</var></td><td>Ed448Goldilocks base point</td><td>(224580040&#8203;295924300&#8203;187604334&#8203;099896036&#8203;246789641&#8203;632564134&#8203;246125461&#8203;686950415&#8203;467406032&#8203;909029192&#8203;869357953&#8203;282578032&#8203;075146446&#8203;173674602&#8203;635247710,
+298819210&#8203;078481492&#8203;676017930&#8203;443930673&#8203;437544040&#8203;154080242&#8203;095928241&#8203;372331506&#8203;189835876&#8203;003536878&#8203;655418784&#8203;733982303&#8203;233503462&#8203;500531545&#8203;062832660)</td></tr>
+<tr><td><var>H</var></td><td>Point of order 4 with positive coordinates</td><td>(1, 0)</td></tr>
+<tr><td><var>m</var></td><td><var>&#x2113;</var><sup>&minus;1</sup>&nbsp;(<code>mod</code>&nbsp;<var>h</var>)</td><td>3</td></tr>
+<tr><td><var>K</var></td><td>Montgomery <var>u</var> coordinate</td><td>284926390&#8203;974837292&#8203;580902741&#8203;020352466&#8203;934112412&#8203;198492578&#8203;047426886&#8203;951351018&#8203;799021072&#8203;222778755&#8203;168649464&#8203;863442075&#8203;375759097&#8203;193918879&#8203;068423582</td></tr>
+</table>
+
+
+Step&nbsp;3: Apply the inverse map
+----------------------------------
+
+To apply the [inverse map](map),
+we suggest you use our [optimised formulas](formulas).
+
+Note that not all public keys are eligible for the inverse map,
+so this step will fail half the time on average.
+When it does,
+just go back to step (1) and generate a new random ephemeral key.
+
+<aside>
+While the &ldquo;check and retry&rdquo; approach is not constant time,
+as long as the keys were properly selected at random leaking the number
+of tries will not reveal anything else.
+</aside>
+
+
+Step&nbsp;4: Properly serialise the representative
+--------------------------------------------------
+
+The inverse map only generates principal square roots.
+That is, half of all possible representatives.
+If we sent that directly over the network,
+it would be easy for an eavesdropper to notice that one bit is
+effectively always zero,
+and suspect our use of Elligator.
+There are two ways to mitigate this problem:
+
+- We can flip the sign of <var>r</var> at random.
+  That is, half the time, we choose &minus;<var>r</var> instead of
+  <var>r</var>
+  (use constant time selection to do this).
+  This will not affect the direct map when we try to recover the point
+  <var>P</var> because
+  `map`(<var>r</var>)&nbsp;=&nbsp;`map`(&minus;<var>r</var>).
+- If the bit-string representation of a principal square root
+  systematically leaves one of its bits cleared
+  then we can replace it by a random bit instead.
+  Of course,
+  we must ignore that random bit when we parse the bit-string back.
+
+Furthermore,
+we generally send _byte_-strings over the network.
+If the length of the bit-string is not a multiple of&nbsp;8,
+the remaining bits must be filled with random data for the whole byte
+string to look random.
+Of course,
+we must ignore those random bits when we parse the bit-string.
+
+
+Suggested API design
+--------------------
+
+There are two main routes the API could go:
+It could be _deterministic_,
+or it could call an RNG internally.
+The former is easier to test while the latter is easier to use.
+If you can,
+we suggest that you write a low-level deterministic API that you can
+thoroughly test,
+then implement an easy to use high-level API on top of it.
+
+Here's what a good low level deterministic API might look like:
+
+    void generate_public_key(uint8_t       public_key[KEY_SIZE],
+                             const uint8_t secret_key[KEY_SIZE]);
+
+    int  inverse_map(uint8_t       representative[KEY_SIZE],
+                     const uint8_t public_key    [KEY_SIZE],
+                     uint8_t       random_tweak);
+
+    void direct_map(uint8_t       public_key    [KEY_SIZE],
+                    const uint8_t representative[KEY_SIZE]);
+
+The first function generates a public key from a secret key.
+It can be implemented with _method&nbsp;1_ or _method&nbsp;2_,
+depending on your use case
+(_method&nbsp;1_ is potentially faster,
+_method&nbsp;2_ potentially requires less code).
+Implementing both methods and verifying that they behave identically can
+also be a good test.
+
+The direct and inverse maps behave as expected.
+Note the added `random_tweak` for the inverse map,
+that provides the randomness needed to select the sign of the
+<var>v</var> coordinate and properly serialising the representative.
+
+In practice the inverse map is only used with a fresh public key that
+was generated with the special procedure
+(_method&nbsp;1_ or _method&nbsp;2_).
+On top of that it fails half the time,
+forcing us to generate a new key pair and try again until it works.
+It makes sense to provide a higher-level function that handles the whole
+procedure:
+
+    void key_pair_deterministic(uint8_t representative[KEY_SIZE],
+                                uint8_t secret_key    [KEY_SIZE],
+                                uint8_t random_seed[32]);
+
+The `random_seed` can be expanded with a stream cipher to provide enough
+randomness for an unlimited number of retries,
+so that the whole function never fails.
+_(And it is automatically wiped after use,
+which is why it is not `const`.)_
+
+Note that this function does not need to provide the public key itself:
+the party that generates it will send the representative over the
+network,
+then only use the `secret_key` for key exchanges.
+Of course, the recipient will need the `direct_map()` to convert the
+representative they received and complete their end of the key exchange.
+
+Finally,
+you can provide one high-level function that gathers the randomness
+itself:
+
+    void key_pair_easy(uint8_t representative[KEY_SIZE],
+                       uint8_t secret_key    [KEY_SIZE]);
+
+It could call `key_pair_deterministic()` under the hood,
+or use the low level functions directly.

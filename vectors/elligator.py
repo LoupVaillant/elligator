@@ -130,11 +130,11 @@ def rev_map_fast(u, v_is_negative):
     t = u + A
     r = -Z * u
     r = r * t
-    isr, is_square = inv_sqrt(r)
+    r, is_square = inv_sqrt(r)
     if not is_square:
         return None
     u = cmove(u, t, v_is_negative)
-    r = u * isr
+    r = u * r
     t = -r
     r = cmove(r, t, r.is_negative()) # abs(rep)
     return r

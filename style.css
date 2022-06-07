@@ -241,8 +241,14 @@ aside {
     margin: 0 1.5rem;
     font-style: italic;
     background-color: #eeebe7;
-    color: #1e1d1c;
+    color: #000000;
     font-size: 93%;
+}
+aside em {
+    font-style: normal;
+}
+aside p:last-child{
+    margin: 0;
 }
 
 /* quotes */
@@ -291,7 +297,7 @@ h3 {
     font-feature-settings: "smcp" 1;
 }
 p, ul, ol {
-    margin: 0 0 1.5rem 0;
+    margin: 0 0 0.9rem 0;
 }
 table {
     margin: 0 0 1.5rem 0;
@@ -302,13 +308,11 @@ td {
 
 /* desktop layout */
 body {
-    max-width: 768px;
+    max-width: 1000px;
     margin: 0 auto 0 auto;
-    display: flex;
     flex-direction: column;
 }
 header {
-    flex: none;
     margin: 1rem 6rem 2.7rem 3rem;
 }
 header h1 {
@@ -317,20 +321,19 @@ header h1 {
     margin: 2rem 0 0 0;
 }
 footer {
-    flex: none;
     margin: 1rem 1rem 10rem 1rem;
 }
 .center {
     display: flex;
-    flex: 1;
     padding: 0 1rem 0 1rem;
 }
 nav {
-    order: -1;
+    order: 1;
     flex: 0 0 10rem;
     margin: 0 2rem 0 0;
 }
 article {
+    order: 2;
     flex: 1;
 }
 
@@ -347,6 +350,10 @@ article {
     }
     .center {
         flex-direction: column;
+    }
+    article {
+        order: 0;
+        flex: 0 0 auto;
     }
     nav {
         order: 1;

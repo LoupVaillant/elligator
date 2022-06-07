@@ -157,7 +157,7 @@ def scalarmult_all_vectors():
 # Main program #
 ################
 vectors_map = {"direct"    : direct_map_all_vectors,
-               "reverse"   : reverse_map_all_vectors,
+               "inverse"   : reverse_map_all_vectors,
                "scalarmult": scalarmult_all_vectors,
                }
 print(vectors_map[vectors]())
