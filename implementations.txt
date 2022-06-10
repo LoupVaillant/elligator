@@ -14,6 +14,9 @@ implementation added to this list.
 Complete implementations
 ------------------------
 
+They provide a complete implementation,
+suitable for key exchange.
+
 - __[Libdecaf](https://sourceforge.net/projects/ed448goldilocks/)__
   Implements a _variant_ of Elligator for Ristretto255
   (based on Curve255) and Ristretto448 (based on Curve448).
@@ -34,8 +37,35 @@ Complete implementations
   (and pad the top _two_ most significant bits with random data).
 
 
-Partial implementations
------------------------
+Hash-to-Point implementations
+-----------------------------
+
+These only implement the direct map
+(without necessarily exposing it),
+so random numbers can be mapped to curve points whose discrete logarithm
+is unknown
+(this is most useful for [Password Authenticated Key
+Agreement](https://en.wikipedia.org/wiki/Password-authenticated_key_agreement)).
+
+- __[Libsodium](https://libsodium.org)__
+  uses the Elligator&nbsp;2 direct map for Ed25519 and
+  [Ristretto255](https://ristretto.group).
+  For Ed25519 it follows the Map-to-Curve procedure outlined in the
+  [Hash to curve RFC draft][RFC].
+  For Ristretto255 it only implements [this mapping][rmap],
+  which is indistinguishable from a random oracle.
+
+[RFC]:  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-14
+[rmap]: https://ristretto.group/formulas/elligator.html
+
+- __[Curve25519-Dalek](https://dalek.rs/)__
+  uses the Elligator&nbsp;2 direct map for Ed25519 and
+  [Ristretto255](https://ristretto.group).
+  It uses the same strategies as Libsodium.
+
+
+Incomplete implementations
+--------------------------
 
 - __[Kleshni](https://github.com/Kleshni/Elligator-2)__
   implements Elligator&nbsp;2 for Curve25519.
@@ -45,7 +75,7 @@ Partial implementations
   Instead all 256 bits are interpreted and reduced modulo <var>p</var>.
   However, as of 2022/06:
 
-  - The inverse map does not pad the representatives at all,
+  - The inverse map does not pad the representative at all,
     so the top two bits are always zero.
     To pad those bits in a way that is compatible with its direct map we
     need to randomly negate the representative then randomly add
@@ -53,27 +83,3 @@ Partial implementations
   - The [special public key derivation](key-exchange)
     required to use the inverse map safely is missing.
 
-- __[Libsodium](https://libsodium.org)__
-  implements the Elligator&nbsp;2 direct map for Ed25519 and
-  [Ristretto255](https://ristretto.group).
-  For Ed25519 it follows the following procedure:
-
-  - The input are 32 random bytes, or a 32 byte hash.
-  - The sign bit of representatives is interpreted normally.
-  - The _high_ bit is cleared and its original value retained for later.
-  - The Elligator&nbsp;2 map is applied (<var>Z</var>&nbsp;=&nbsp;2).
-  - The resulting <var>u</var> coordinate is converted to Ed25519.
-  - The sign of the Ed25519 point is set from the _high_ bit above.
-  - The (possibly negated) Ed25519 point is multiplied by 8
-    to clear the cofactor.
-
-  It also has a nearly identical procedure,
-  except it starts with a 64 byte hash interpreted as Big Endian.
-
-  For Ristretto255 it only implements [this mapping][rmap],
-  which is indistinguishable from a random oracle.
-
-  As of 2022/06,
-  support for the inverse map is out of scope.
-
-[rmap]: https://ristretto.group/formulas/elligator.html
