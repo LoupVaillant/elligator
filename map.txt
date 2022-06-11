@@ -11,7 +11,8 @@ the &ldquo;map&rdquo; (or &ldquo;direct map&rdquo; for clarity)
 and the &ldquo;inverse map&rdquo;.
 
 The map is a function that takes a number <var>r</var> from an
-elliptic curve's finite field (which we call a _field element_),
+elliptic curve&#8217;s finite field (which we call a
+&ldquo;field element&rdquo;),
 and produces a point
 <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
 on that elliptic curve.
@@ -30,7 +31,7 @@ For any given point <var>P</var> that can be mapped,
 applying the inverse map then the direct map will yield the original
 point <var>P</var>.
 
-For any representative <var>r</var> in the curve's finite field,
+For any representative <var>r</var> in the curve&#8217;s finite field,
 applying the direct map then the inverse map will yield either the
 original representative <var>r</var> or its opposite
 &minus;<var>r</var>.
@@ -41,11 +42,11 @@ Applicability
 
 Elligator does not work on all elliptic curves,
 and will not properly hide points on all curves where it does work.
-Some conditions must hold:
+The following conditions must hold:
 
 - The finite field the curve is based on must have an odd
   characteristic.
-  That is, not a binary field.
+  That is, it cannot be a binary field.
   In practice most curves use large prime fields, which are all odd.
   While extension fields and binary fields can sometimes be faster,
   prime fields have a more compelling security story.
@@ -72,19 +73,19 @@ Some conditions must hold:
   pseudo-Mersenne primes (2<sup><var>k</var></sup>&nbsp;&minus;&nbsp;<var>c</var>),
   and _some_ Solinas primes
   (2<sup><var>k</var></sup>&nbsp;&minus;&nbsp;2<sup><var>l</var></sup>&nbsp;&hellip;&nbsp;&minus;&nbsp;1
-  where <var>k</var>&nbsp;&minus;&nbsp;<var>l</var> ideally exceeds 128)
+  where <var>k</var>&nbsp;&minus;&nbsp;<var>l</var> ideally exceeds&nbsp;128)
   are adequate.
 
 Overall, those conditions cover a wide range of curves,
 including the very popular Curve25519 and Curve448.
-One notable exception are short Weierstraß curves like NIST P-256,
-which have a prime order,
-and therefore lack a point of order two.
+One notable exception are short Weierstraß curves that
+have a prime order and therefore lack a point of order two;
+an example of a curve with a prime order is NIST&nbsp;P-256.
 
 <aside>
 Those already familiar with Elligator may realise that we are actually
 talking about Elligator&nbsp;2.
-That's because Elligator&nbsp;1 is less widely applicable,
+That&#8217;s because Elligator&nbsp;1 is less widely applicable,
 has no other compelling benefits,
 and as a result has not caught on.
 It is thus simpler to ignore it.
@@ -106,6 +107,8 @@ Before actually defining the maps, we need to fix those parameters.
   Most of the time though,
   we will be using a prime field,
   where <var>q</var>&nbsp;=&nbsp;<var>p</var>.
+  Recall that <var>q</var>&nbsp;=&nbsp;2 is not possible because
+  the field must have an odd characteristic.
 
   Examples of finite fields include
   GF(2<sup>255</sup>&nbsp;&minus;&nbsp;19),
@@ -122,7 +125,7 @@ Before actually defining the maps, we need to fix those parameters.
   Curve448 (<var>A</var>&nbsp;=&nbsp;156326, <var>B</var>&nbsp;=&nbsp;1).
 
 - The **non-square** <var>Z</var> in GF(<var>q</var>).
-  It can be any number in GF(<var>p</var>) that has no square root.
+  It can be any number in GF(<var>q</var>) that has no square root.
   That is, there is no number <var>n</var> in GF(<var>q</var>) such that
   <var>n</var><sup>2</sup>&nbsp;=&nbsp;<var>Z</var>.
 
@@ -132,7 +135,7 @@ Before actually defining the maps, we need to fix those parameters.
   With GF(2<sup>255</sup>&nbsp;&minus;&nbsp;19),
   those would be 2 and &radic;&minus;1 respectively.
   With
-  GF(2<sup>448</sup>&nbsp;&minus;&nbsp;2<sup>224</sup>&nbsp;&minus;&nbsp;19),
+  GF(2<sup>448</sup>&nbsp;&minus;&nbsp;2<sup>224</sup>&nbsp;&minus;&nbsp;1),
   &minus;1 is best in all cases.
 
 - The **set of principal square roots** &ndash;
@@ -140,23 +143,23 @@ Before actually defining the maps, we need to fix those parameters.
   A square <var>s</var> in GF(<var>q</var>) always has two square roots:
   &radic;<var>s</var> and &minus;&radic;<var>s</var>.
   We need a way to determine which is the positive one for the direct
-  and inverse map to be deterministic.
+  and inverse maps to be deterministic.
 
-  For prime fields GF(<var>p</var>) where
-  <var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4), we can just say
-  <var>s</var><sup>(<var>p</var>+1)/4</sup> is positive.
+  For prime fields GF(<var>q</var>) where
+  <var>q</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4), we can just say
+  <var>s</var><sup>(<var>q</var>+1)/4</sup> is positive.
   For other prime fields,
-  where <var>p</var>&nbsp;&equiv;&nbsp;1&nbsp;(mod&nbsp;4),
+  where <var>q</var>&nbsp;&equiv;&nbsp;1&nbsp;(mod&nbsp;4),
   we chose the set of principal square roots (positive field elements)
   somewhat arbitrarily.
   Common choices are the set
-  {0,&nbsp;1,&nbsp;…&nbsp;(<var>p</var>&minus;1)/2}
+  {0,&nbsp;1,&nbsp;…&nbsp;(<var>q</var>&minus;1)/2}
   or the set of even numbers.
 
 <aside>
 For the implementation of square roots and checking whether a number is
-a square root in GF(<var>p</var>),
-refer to [I-D.draft-irtf-cfrg-hash-to-curve-11, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-11#appendix-I).
+a square root in GF(<var>q</var>),
+refer to [I-D.draft-irtf-cfrg-hash-to-curve-14, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-14#appendix-I).
 </aside>
 
 
@@ -175,7 +178,7 @@ of a field element <var>f</var>:
 This can be constructed using the square root checking functions needed
 to find the chosen non-square <var>Z</var> above.
 In prime fields, it can also succinctly be defined as:
-`legendre`(<var>f</var>)&nbsp;=&nbsp;<var>f</var><sup>(<var>p</var>&nbsp;&minus;&nbsp;1)&nbsp;/&nbsp;2</sup>.
+`legendre`(<var>f</var>)&nbsp;=&nbsp;<var>f</var><sup>(<var>q</var>&nbsp;&minus;&nbsp;1)&nbsp;/&nbsp;2</sup>.
 
 The map itself takes any field element <var>r</var> (the
 representative),
