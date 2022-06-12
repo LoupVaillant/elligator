@@ -15,19 +15,18 @@ So instead of writing regular conditionals we use `CMOVE()` and
 `CSWAP()`.
 
 The `CMOVE(x, y, condition)` operation is a conditional move.
-It means "if condition, assign y to x":
+It means &ldquo;if condition, assign y to x&rdquo;:
 
     if condition
         x = y
 
 The `CSWAP(x, y, condition)` operation is a conditional swap.
-It means "if condition, swap the values of x and y":
+It means &ldquo;if condition, swap the values of x and y&rdquo;:
 
     if condition
         x, y = y, x
 
-Of course,
-`CMOVE()` and `CSWAP()` must be implemented in a way that doesn't use
+`CMOVE()` and `CSWAP()` must be implemented in a way that doesn&#8217;t use
 actual branches or indices,
 to make sure they run in constant time.
 
@@ -40,15 +39,14 @@ Given a non-zero square <var>s</var> and a non-square <var>n</var>:
 
 - `inv_sqrt`(0)&nbsp;=&nbsp;(0, True)
 - `inv_sqrt`(<var>s</var>)&nbsp;=&nbsp;(&radic;(1/<var>x</var>), True)
-- `inv_sqrt`(<var>n</var>)&nbsp;=&nbsp;(&radic;(<var>k</var>/<var>x</var>), False)
-
-where <var>k</var>&nbsp;=&nbsp;&radic;&minus;1 if
-<var>p</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519),
-and <var>k</var>&nbsp;=&nbsp;&minus;1 if
-<var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4) (Curve448).
+- `inv_sqrt`(<var>n</var>)&nbsp;=&nbsp;(&radic;(<var>k</var>/<var>x</var>), False),
+  where <var>k</var>&nbsp;=&nbsp;&radic;&minus;1 if
+  <var>q</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519),
+  and <var>k</var>&nbsp;=&nbsp;&minus;1 if
+  <var>q</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4) (Curve448).
 
 Recommended way to implement `inv_sqrt`(<var>x</var>) if
-<var>p</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519):
+<var>q</var>&nbsp;&equiv;&nbsp;5&nbsp;(mod&nbsp;8) (Curve25519):
 
     inv_sqrt(x)
       ir        = x^((p - 5) / 8)
@@ -59,13 +57,13 @@ Recommended way to implement `inv_sqrt`(<var>x</var>) if
       return ir, is_square
 
 Where
-`sqrt_m1`&nbsp;=&nbsp;&radic;&minus;1&nbsp;=&nbsp;abs((2<sup>(<var>p</var>&minus;1)&nbsp;/&nbsp;4)</sup>).
+`sqrt_m1`&nbsp;=&nbsp;&radic;&minus;1&nbsp;=&nbsp;abs((2<sup>(<var>q</var>&minus;1)&nbsp;/&nbsp;4)</sup>).
 For Curve25519,
-p&nbsp;=&nbsp;2<sup>255-19</sup> and
-sqrt_m1&nbsp;=&nbsp;196811613&#8203;767075059&#8203;568070793&#8203;049885420&#8203;154460665&#8203;159238901&#8203;627440210&#8203;731238297&#8203;84752
+p&nbsp;=&nbsp;2<sup>255</sup>&minus;19 and
+`sqrt_m1`&nbsp;=&nbsp;196811613<wbr>767075059<wbr>568070793<wbr>049885420<wbr>154460665<wbr>159238901<wbr>627440210<wbr>731238297<wbr>84752
 
 Recommended way to implement `inv_sqrt`(<var>x</var>) if
-<var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4) (Curve448):
+<var>q</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4) (Curve448):
 
     inv_sqrt(x)
       ir        = x^((p - 3) / 4)
@@ -74,9 +72,21 @@ Recommended way to implement `inv_sqrt`(<var>x</var>) if
       return ir, is_square
 
 <aside>
-We don't cover cases where
-<var>p</var>&nbsp;&equiv;&nbsp;1&nbsp;(mod&nbsp;8).
-Good luck.
+We don&#8217;t offer an optimised strategy
+for other field primes.
+Such fields are rarely specified in elliptic curve standards.
+
+In such cases,
+start by recovering a square root;
+guidance for this so can be found in
+[I-D.draft-irtf-cfrg-hash-to-curve-14, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-14#appendix-I).
+Once one of the two square roots has been determined,
+compute the multiplicative inverse thereof to get
+the inverse square root.
+This is not very optimised,
+but works.
+Optimisation for any individual case is left
+as an exercise for the reader.
 </aside>
 
 
@@ -160,19 +170,19 @@ This saves a couple operations:
 ### Curve25519 parameters
 
 <table>
-<tr><td><var>p</var></td><td>Prime&nbsp;field</td><td>2<sup>255</sup>&nbsp;&minus;&nbsp;19</td></tr>
+<tr><td><var>q</var></td><td>Prime&nbsp;field</td><td>2<sup>255</sup>&nbsp;&minus;&nbsp;19</td></tr>
 <tr><td><var>A</var></td><td>Curve&nbsp;constant</td><td>486662</td></tr>
 <tr><td><var>B</var></td><td>Curve&nbsp;constant</td><td>1</td></tr>
 <tr><td><var>Z</var></td><td>Non-square</td><td>2</td></tr>
-<tr><td><var>Z<sub>u</sub></var></td><td>&minus;<var>Z</var>&radic;&minus;1</td><td>185337218&#8203;652430857&#8203;981713338&#8203;943668698&#8203;957428593&#8203;009725016&#8203;942407498&#8203;577089052&#8203;50445</td></tr>
-<tr><td><var>Z<sub>v</sub></var></td><td>&radic;<var>Z<sub>u</sub></var></td><td>196811613&#8203;767075059&#8203;568070793&#8203;049885420&#8203;154460665&#8203;159238901&#8203;627440210&#8203;731238297&#8203;84751</td></tr>
+<tr><td><var>Z<sub>u</sub></var></td><td>&minus;<var>Z</var>&radic;&minus;1</td><td>185337218<wbr>652430857<wbr>981713338<wbr>943668698<wbr>957428593<wbr>009725016<wbr>942407498<wbr>577089052<wbr>50445</td></tr>
+<tr><td><var>Z<sub>v</sub></var></td><td>&radic;<var>Z<sub>u</sub></var></td><td>196811613<wbr>767075059<wbr>568070793<wbr>049885420<wbr>154460665<wbr>159238901<wbr>627440210<wbr>731238297<wbr>84751</td></tr>
 </table>
 
 These are the values suggested in the original Elligator paper,
 and used in most of the implementations we know of.
 A good alternative for <var>Z</var>,
 used by
-[Ristretto255](https://ristretto.group/test_vectors/ristretto255.html),
+[ristretto255](https://ristretto.group/test_vectors/ristretto255.html),
 is <var>Z</var>&nbsp;=&nbsp;&radic;&minus;1,
 such that
 <var>Z<sub>u</sub></var>&nbsp;=&nbsp;<var>Z<sub>v</sub></var>&nbsp;=&nbsp;1.
@@ -180,7 +190,7 @@ such that
 ### Curve448 parameters
 
 <table>
-<tr><td><var>p</var></td><td>Prime&nbsp;field</td><td>2<sup>448</sup>&nbsp;&minus;&nbsp;<sup>224</sup>&nbsp;&minus;&nbsp;1</td></tr>
+<tr><td><var>q</var></td><td>Prime&nbsp;field</td><td>2<sup>448</sup>&nbsp;&minus;&nbsp;<sup>224</sup>&nbsp;&minus;&nbsp;1</td></tr>
 <tr><td><var>A</var></td><td>Curve&nbsp;constant</td><td>156326</td></tr>
 <tr><td><var>B</var></td><td>Curve&nbsp;constant</td><td>&minus;1</td></tr>
 <tr><td><var>Z</var></td><td>Non-square</td><td>&minus;1</td></tr>
@@ -229,8 +239,8 @@ The constants <var>A</var> and <var>Z</var> are the same as the direct
 map.
 
 <aside>
-We don't need to know <var>v</var>,
-only its sign –which is generally randomised anyway.
+We don&#8217;t need to know <var>v</var>,
+only its sign – which is generally randomised anyway.
 </aside>
 
 <aside>
@@ -287,9 +297,9 @@ The isogeny conversion is as follows:
       V  = (Y2 + X2) * du
       return (U, V, D)
 
-where `sqrt_d2`&nbsp;=&nbsp;2&radic;&minus;39081&nbsp;=&nbsp;197888467&#8203;295464439&#8203;538354009&#8203;753858038&#8203;256835152&#8203;591059802&#8203;148199779&#8203;196087404&#8203;232002515&#8203;713604263&#8203;127793030&#8203;747855424&#8203;464185691&#8203;766453844&#8203;835192428.
+where `sqrt_d2`&nbsp;=&nbsp;2&radic;&minus;39081&nbsp;=&nbsp;197888467<wbr>295464439<wbr>538354009<wbr>753858038<wbr>256835152<wbr>591059802<wbr>148199779<wbr>196087404<wbr>232002515<wbr>713604263<wbr>127793030<wbr>747855424<wbr>464185691<wbr>766453844<wbr>835192428.
 
-Once we've done the above then added the low order point,
+Once we&#8217;ve done the above then added the low order point,
 we can convert to Montgomery
 (this is slightly different from Curve25519):
 
@@ -311,17 +321,17 @@ This enables a couple optimisations.
 
 ### Curve25519
 
-Curve25519 doesn't need scalar multiplication to select its low order
+Curve25519 doesn&#8217;t need scalar multiplication to select its low order
 point.
 We could instead select them with a pre-computed table and constant time
 lookup,
 but even that is overkill.
 Ed25519 has 4 generators of the low order group
 (4 points of order 8).
-Let's (somewhat arbitrarily) chose the generator
+Let&#8217;s (somewhat arbitrarily) chose the generator
 <var>H</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>)
 where both <var>x</var> and <var>y</var> are positive
-(below <var>p</var>/2).
+(below <var>q</var>/2).
 A naive look up table would look like this:
 
     0.H = ( 0       ,  1)
@@ -334,9 +344,9 @@ A naive look up table would look like this:
     7.H = (-x       ,  y)
 
 Where
-<var>x</var>&nbsp;=&nbsp;143993178&#8203;682001182&#8203;603479343&#8203;205272325&#8203;806188239&#8203;711943452&#8203;612142175&#8203;754167887&#8203;99818
+<var>x</var>&nbsp;=&nbsp;143993178<wbr>682001182<wbr>603479343<wbr>205272325<wbr>806188239<wbr>711943452<wbr>612142175<wbr>754167887<wbr>99818
 and
-<var>y</var>&nbsp;=&nbsp;270738550&#8203;114484064&#8203;931822528&#8203;722565878&#8203;893680426&#8203;757531351&#8203;946374360&#8203;975030340&#8203;2022.
+<var>y</var>&nbsp;=&nbsp;270738550<wbr>114484064<wbr>931822528<wbr>722565878<wbr>893680426<wbr>757531351<wbr>946374360<wbr>975030340<wbr>2022.
 
 We can instead reduce the pre-computed table to only 3 field elements:
 <var>x</var>, <var>y</var>, and &radic;&minus;1.
@@ -363,16 +373,16 @@ Finally, we can compute the scalar multiplication
 Curve 448 has 4 low order points:
 (0,&nbsp;1), (1,&nbsp;0), (0,&nbsp;-1), (-1,&nbsp;0).
 Among them (1,&nbsp;0) and (-1,&nbsp;0) have order 4.
-Let's (somewhat arbitrarily) decide that
+Let&#8217;s (somewhat arbitrarily) decide that
 <var>H</var>&nbsp;=&nbsp;(1,&nbsp;0).
-Here we don't even need a clever way to compute
+Here we don&#8217;t even need a clever way to compute
 <var>i</var>.<var>H</var>,
 because:
 
 - (<var>x</var>,&nbsp;<var>y</var>)&nbsp;+&nbsp;<var>0</var>.<var>H</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>)
-- (<var>x</var>,&nbsp;<var>y</var>)&nbsp;+&nbsp;<var>1</var>.<var>H</var>&nbsp;=&nbsp;(<var>y</var>,&nbsp;<var>&minusx</var>)
-- (<var>x</var>,&nbsp;<var>y</var>)&nbsp;+&nbsp;<var>2</var>.<var>H</var>&nbsp;=&nbsp;(<var>&minusx</var>,&nbsp;<var>&minusy</var>)
-- (<var>x</var>,&nbsp;<var>y</var>)&nbsp;+&nbsp;<var>3</var>.<var>H</var>&nbsp;=&nbsp;(<var>&minusy</var>,&nbsp;<var>x</var>)
+- (<var>x</var>,&nbsp;<var>y</var>)&nbsp;+&nbsp;<var>1</var>.<var>H</var>&nbsp;=&nbsp;(<var>y</var>,&nbsp;<var>&minus;x</var>)
+- (<var>x</var>,&nbsp;<var>y</var>)&nbsp;+&nbsp;<var>2</var>.<var>H</var>&nbsp;=&nbsp;(<var>&minus;x</var>,&nbsp;<var>&minus;y</var>)
+- (<var>x</var>,&nbsp;<var>y</var>)&nbsp;+&nbsp;<var>3</var>.<var>H</var>&nbsp;=&nbsp;(<var>&minus;y</var>,&nbsp;<var>x</var>)
 
 All we have to do is conditionally negate and swap <var>x</var> and
 <var>y</var>:

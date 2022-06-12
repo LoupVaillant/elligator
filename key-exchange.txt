@@ -9,59 +9,59 @@ Using Elligator to Hide Key Exchanges
 Public keys can be distinguished from random noise in several ways,
 and Elligator only addresses one of them.
 To address the others,
-we must avoid a couple death traps.
+we must avoid a couple of subtle issues.
 
 Properly hiding a key exchange involves four steps:
 
-1. Chose an _ephemeral_ secret key at random,
+1. Choose an _ephemeral_ secret key at random,
    just like you would for a normal key exchange.
 2. Generate a public key from that shared secret
    with a _special procedure_,
    described below.
 3. Apply the Elligator&nbsp;2 inverse map to your public key.
-   If it does not work go back to step (1).
+   If it does not work go back to step&nbsp;(1).
    Otherwise you get its representative.
 4. Serialise the representative into a random-looking byte stream.
 
 <aside>
-Though conceptually steps 3 and 4 are easier to describe separately,
+Though conceptually steps&nbsp;3 and&nbsp;4 are easier to describe separately,
 it is generally a good idea to merge them to simplify the API.
 </aside>
 
 
-Step&nbsp;1: Chose an ephemeral secret key
-------------------------------------------
+Step&nbsp;1: Choose an ephemeral secret key
+-------------------------------------------
 
-Though the goal is to hide public keys as random noise,
-it is trivial to detect if you're sending representatives of the same
+The goal is to hide public keys as random noise.
+It is trivial to detect if you&#8217;re sending representatives of the same
 key twice.
 Which is why the keys you are trying to hide as random noise must be
 used only once.
-Those are called _ephemeral keys_.
+Those are called &ldquo;ephemeral keys&rdquo;.
 Ephemeral keys may be used for several exchanges,
-our only constraint is that they're sent only once.
+our only constraint is that they&#8217;re sent only once.
 
 Of course, ephemeral secret keys are chosen at random.
 
 
-Step&nbsp;2: Generate a "special" public key
+Step&nbsp;2: Generate a &ldquo;special&rdquo; public key
 --------------------------------------------
 
 Most key exchange algorithms do not work over the whole curve.
-To avoid leaking information public keys always belong to the _prime
+To avoid leaking information, public keys always belong to the _prime
 order subgroup_,
 which comprises only a fraction of the curve.
 Eavesdroppers could trivially notice if we only used those,
 so we need a way to generate points on the _whole_ curve
 and somehow make key exchange work regardless.
 
-One obvious way to make it work is to _not_ clear the cofactor.
+One obvious way to make it work is _not_ to clear the cofactor.
 This means choosing a base point that generates the whole curve instead
 of the prime order subgroup,
 and choosing a uniformly random scalar between zero and the order of the
 whole curve.
 
-It is more practical however to find a way to be compatible with
+It is more practical, however, to find a way to be compatible with
 existing key exchange algorithms.
 This lets us retain the proofs and guarantees of the original
 key exchange and streamline the APIs.
@@ -70,12 +70,17 @@ compatible with.
 Here we will give an example based on X25519 and X448.
 
 <aside>
-Okay that was a mouthful.
+If these terms sound unfamiliar:
+don&#8217;t panic.
 To get more familiar with elliptic curves we suggest you watch this
 excellent [&ldquo;ECCHacks&rdquo; talk by Daniel J.&nbsp;Bernstein and
 Tanja Lange][ECCHacks]
 and read this [tutorial about &ldquo;cofactors&rdquo; and &ldquo;prime
 order subgroups&rdquo;][cofactor].
+
+Nonetheless, it is important to understand these issues when designing
+a protocol that uses Elligator &ndash; and it is at least helpful
+to understand them when implementing Elligator.
 </aside>
 
 [ECCHacks]: https://media.ccc.de/v/31c3_-_6369_-_en_-_saal_1_-_201412272145_-_ecchacks_-_djb_-_tanja_lange
@@ -83,10 +88,10 @@ order subgroups&rdquo;][cofactor].
 
 ### X25519 and X448
 
-Those two key exchanges have the same structure:
+These two key exchanges have the same structure:
 
-- They both use a prime field GF(<var>p</var>),
-  whose characteristic is close to a power of two.
+- They both use a prime field GF(<var>q</var>),
+  whose characteristic is close to a power of&nbsp;two.
 - The order of their curve is a big prime number <var>&#x2113;</var>,
   multiplied by a small cofactor <var>h</var>
   (<var>h</var>&nbsp;=&nbsp;8 for Curve25519,
@@ -102,7 +107,7 @@ Those two key exchanges have the same structure:
   and
   &minus;<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;&minus;<var>v</var>)
   were the same point.
-  In practice, this means we can ignore <var>v</var> altogether.
+  In practice, this means we can ignore&nbsp;<var>v</var> altogether.
 
 The key exchange itself proceeds as follows:
 
@@ -125,7 +130,7 @@ The `clamp`() operation is defined thus:
     clamp(s):
       clamped = s - s % h        # remove low bits
       clamped = clamped % 2^msb  # remove high bits
-      clamped = clamped + 2^msb  # set high bit
+      clamped = clamped | 2^msb  # set high bit
       return clamped
 
 Where `msb`&nbsp;=&nbsp;254 for Curve25519
@@ -225,17 +230,17 @@ We start with the following:
 
 - The random secret bit string <var>s</var>, freshly generated for a
   single key exchange
-  (256 bits for Curve25519,
-  448 bits for curve448).
+  (256&nbsp;bits for Curve25519,
+  448&nbsp;bits for curve448).
 - the cofactor <var>h</var> of the curve
-  (8 for Curve25519,
-  4 for Curve448).
+  (8&nbsp;for Curve25519,
+  4&nbsp;for Curve448).
 - The generator <var>G</var> of the prime order group of the curve
   (the one used in Ed25519 or Ed448).
 - The generator <var>H</var> of the _low_ order group of the curve.
   It must be of order <var>h</var>.
-  Curve25519 has 4 suitable candidates.
-  Curve448 has 2.
+  Curve25519 has 4&nbsp;suitable candidates.
+  Curve448 has&nbsp;2.
 
 The Edwards point
 <var>E</var>&nbsp;=&nbsp;(<var>x</var>,&nbsp;<var>y</var>) is generated
@@ -261,7 +266,7 @@ The conversion formula depends on the curve.
 
 <aside>
 Ed448 has an additional complication:
-Ed448Goldilocks is not birationally equivalent to Curve448,
+Ed448-Goldilocks is not birationally equivalent to Curve448,
 it is _isogenous_.
 Converting it directly effectively introduces a multiplication by two,
 which nullifies the point of order 2.
@@ -273,7 +278,7 @@ birationally equivalent Edwards curve _before_ we add
 </aside>
 
 <aside>
-We don't need the <var>v</var> coordinate here.
+We don&#8217;t need the <var>v</var>-coordinate here.
 It is ignored by the key exchange,
 Elligator only needs its sign,
 and we have to randomly flip that sign anyway to cover the whole curve.
@@ -282,8 +287,8 @@ but those are an entirely separate problem.)
 </aside>
 
 Once we have <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;?)
-we just need to check whether it can be mapped
-(this only depends on <var>u</var>).
+we just need to check whether it can be mapped;
+this only depends on <var>u</var>.
 If it cannot,
 we try again with a new random scalar <var>s</var>.
 If it can,
@@ -305,8 +310,8 @@ We start with the following:
   single key exchange
   (same as method&nbsp;1).
 - the cofactor <var>h</var> of the curve
-  (8 for Curve25519,
-  4 for Curve448).
+  (8&nbsp;for Curve25519,
+  4&nbsp;for Curve448).
 - The generator <var>G</var> of the prime order group of the curve.
   We use the same as method&nbsp;1.
 - The generator <var>H</var> of the _low_ order group of the curve.
@@ -324,7 +329,7 @@ We can then pre-compute the special base point <var>K</var>:
 We can compute this in Edwards space,
 then convert the result to a Montgomery point.
 With Curve448, mind the isogeny:
-if you make the addition within Ed448Goldilocks the resulting point will
+if you make the addition within Ed448-Goldilocks the resulting point will
 not cover the whole curve.
 </aside>
 
@@ -345,23 +350,23 @@ Curve25519:
 
 <table>
 <tr><td><var>h</var></td><td>Cofactor</td><td>8</td></tr>
-<tr><td><var>G</var></td><td>Ed25519 base point</td><td>(151122213&#8203;495354007&#8203;725011514&#8203;095885315&#8203;114540126&#8203;930418572&#8203;060461132&#8203;839498477&#8203;62202,
-463168356&#8203;949264781&#8203;694283940&#8203;034751631&#8203;413079938&#8203;662562256&#8203;157830336&#8203;031652518&#8203;55960)</td></tr>
-<tr><td><var>H</var></td><td>Point of order 8 with positive coordinates</td><td>(143993178&#8203;682001182&#8203;603479343&#8203;205272325&#8203;806188239&#8203;711943452&#8203;612142175&#8203;754167887&#8203;99818,
-270738550&#8203;114484064&#8203;931822528&#8203;722565878&#8203;893680426&#8203;757531351&#8203;946374360&#8203;975030340&#8203;2022)</td></tr>
+<tr><td><var>G</var></td><td>Ed25519 base point</td><td>(151122213<wbr>495354007<wbr>725011514<wbr>095885315<wbr>114540126<wbr>930418572<wbr>060461132<wbr>839498477<wbr>62202,
+463168356<wbr>949264781<wbr>694283940<wbr>034751631<wbr>413079938<wbr>662562256<wbr>157830336<wbr>031652518<wbr>55960)</td></tr>
+<tr><td><var>H</var></td><td>Point of order 8 with positive coordinates</td><td>(143993178<wbr>682001182<wbr>603479343<wbr>205272325<wbr>806188239<wbr>711943452<wbr>612142175<wbr>754167887<wbr>99818,
+270738550<wbr>114484064<wbr>931822528<wbr>722565878<wbr>893680426<wbr>757531351<wbr>946374360<wbr>975030340<wbr>2022)</td></tr>
 <tr><td><var>m</var></td><td><var>&#x2113;</var><sup>&minus;1</sup>&nbsp;(<code>mod</code>&nbsp;<var>h</var>)</td><td>5</td></tr>
-<tr><td><var>K</var></td><td>Montgomery <var>u</var> coordinate</td><td>533158602&#8203;851899190&#8203;892394975&#8203;900859219&#8203;589053932&#8203;612253068&#8203;502929726&#8203;986334918&#8203;75544</td></tr>
+<tr><td><var>K</var></td><td>Montgomery <var>u</var>-coordinate</td><td>533158602<wbr>851899190<wbr>892394975<wbr>900859219<wbr>589053932<wbr>612253068<wbr>502929726<wbr>986334918<wbr>75544</td></tr>
 </table>
 
 Curve448:
 
 <table>
 <tr><td><var>h</var></td><td>Cofactor</td><td>4</td></tr>
-<tr><td><var>G</var></td><td>Ed448Goldilocks base point</td><td>(224580040&#8203;295924300&#8203;187604334&#8203;099896036&#8203;246789641&#8203;632564134&#8203;246125461&#8203;686950415&#8203;467406032&#8203;909029192&#8203;869357953&#8203;282578032&#8203;075146446&#8203;173674602&#8203;635247710,
-298819210&#8203;078481492&#8203;676017930&#8203;443930673&#8203;437544040&#8203;154080242&#8203;095928241&#8203;372331506&#8203;189835876&#8203;003536878&#8203;655418784&#8203;733982303&#8203;233503462&#8203;500531545&#8203;062832660)</td></tr>
+<tr><td><var>G</var></td><td>Ed448Goldilocks base point</td><td>(224580040<wbr>295924300<wbr>187604334<wbr>099896036<wbr>246789641<wbr>632564134<wbr>246125461<wbr>686950415<wbr>467406032<wbr>909029192<wbr>869357953<wbr>282578032<wbr>075146446<wbr>173674602<wbr>635247710,
+298819210<wbr>078481492<wbr>676017930<wbr>443930673<wbr>437544040<wbr>154080242<wbr>095928241<wbr>372331506<wbr>189835876<wbr>003536878<wbr>655418784<wbr>733982303<wbr>233503462<wbr>500531545<wbr>062832660)</td></tr>
 <tr><td><var>H</var></td><td>Point of order 4 with positive coordinates</td><td>(1, 0)</td></tr>
 <tr><td><var>m</var></td><td><var>&#x2113;</var><sup>&minus;1</sup>&nbsp;(<code>mod</code>&nbsp;<var>h</var>)</td><td>3</td></tr>
-<tr><td><var>K</var></td><td>Montgomery <var>u</var> coordinate</td><td>284926390&#8203;974837292&#8203;580902741&#8203;020352466&#8203;934112412&#8203;198492578&#8203;047426886&#8203;951351018&#8203;799021072&#8203;222778755&#8203;168649464&#8203;863442075&#8203;375759097&#8203;193918879&#8203;068423582</td></tr>
+<tr><td><var>K</var></td><td>Montgomery <var>u</var>-coordinate</td><td>284926390<wbr>974837292<wbr>580902741<wbr>020352466<wbr>934112412<wbr>198492578<wbr>047426886<wbr>951351018<wbr>799021072<wbr>222778755<wbr>168649464<wbr>863442075<wbr>375759097<wbr>193918879<wbr>068423582</td></tr>
 </table>
 
 
@@ -378,7 +383,7 @@ just go back to step (1) and generate a new random ephemeral key.
 
 <aside>
 While the &ldquo;check and retry&rdquo; approach is not constant time,
-as long as the keys were properly selected at random leaking the number
+as long as the keys were properly selected at random, leaking the number
 of tries will not reveal anything else.
 </aside>
 
@@ -403,17 +408,16 @@ There are two ways to mitigate this problem:
   `map`(<var>r</var>)&nbsp;=&nbsp;`map`(&minus;<var>r</var>).
 - If the bit-string representation of a non-negative representative
   systematically leaves one of its bits cleared
-  then we can replace it by a random bit instead.
-  Of course,
-  we must ignore that random bit when we parse the bit-string back.
+  then we can replace it by a random bit instead,
+  which is to be ignored when parsing the bit-string.
 
 Furthermore,
 we generally send _byte_-strings over the network.
 If the length of the bit-string is not a multiple of&nbsp;8,
 the remaining bits must be filled with random data for the whole byte
 string to look random.
-Of course,
-we must ignore those random bits when we parse the bit-string.
+When parsing the bit-string,
+these additional random bits must be ignored.
 
 
 Suggested API design
@@ -428,7 +432,7 @@ we suggest that you write a low-level deterministic API that you can
 thoroughly test,
 then implement an easy to use high-level API on top of it.
 
-Here's what a good low level deterministic API might look like:
+Here&#8217;s what a good low level deterministic API might look like:
 
     void generate_public_key(uint8_t       public_key[KEY_SIZE],
                              const uint8_t secret_key[KEY_SIZE]);
@@ -451,7 +455,7 @@ also be a good test.
 The direct and inverse maps behave as expected.
 Note the added `random_tweak` for the inverse map,
 that provides the randomness needed to select the sign of the
-<var>v</var> coordinate and properly serialising the representative.
+<var>v</var>-coordinate and properly serialising the representative.
 
 In practice the inverse map is only used with a fresh public key that
 was generated with the special procedure
@@ -466,10 +470,10 @@ procedure:
                                 uint8_t random_seed[32]);
 
 The `random_seed` can be expanded with a stream cipher to provide enough
-randomness for an unlimited number of retries,
+randomness for an unlimited number of retries
 so that the whole function never fails.
-_(And it is automatically wiped after use,
-which is why it is not `const`.)_
+And it should be _automatically wiped_ after use,
+which is why it is not `const`.
 
 Note that this function does not need to provide the public key itself:
 the party that generates it will send the representative over the

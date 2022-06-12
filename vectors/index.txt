@@ -7,6 +7,7 @@ Elligator&nbsp;2 test vectors
 =============================
 
 Test vector files look like the following:
+
     bd568cb3a2d38a12:
     176daa5925e7975e:
     4e3ec9a72c828900:
@@ -73,4 +74,4 @@ Here are the test vectors, for Curve25519 and Curve448 respectively:
 - [curve448\_inverse.vec](curve448_inverse.vec)
 - [curve448\_scalarmult.vec](curve448\_scalarmult.vec)
 
-They are generated with [these scripts](/elligator-reference.tar.gz)
+They are generated with [these scripts](/elligator-reference.tar.gz).

@@ -52,7 +52,7 @@ Lange. Elligator: Elliptic-curve points indistinguishable from uniform
 random strings.  ACM Conference on Computer and Communications Security
 2013, pp.&nbsp;967&ndash;980][paper].
 
-[paper]: https://dl.acm.org/doi/pdf/10.1145/2508859.2516734
+[paper]: https://dl.acm.org/doi/10.1145/2508859.2516734
 
 
 Is Elligator the solution to censorship-resistance?
@@ -68,7 +68,7 @@ suspicious.
 Protocols that adopt Elligator need to have a bigger picture view of
 the threat model and how to maintain plausible deniability.
 
-Additionally, Elligator won't help you if you're already the victim of
+Additionally, Elligator won&#8217;t help you if you&#8217;re already the victim of
 [rubber-hose cryptanalysis](https://xkcd.com/538/).
 
 
@@ -98,3 +98,21 @@ you should read [how Elligator works](map),
 and [how to apply it safely](key-exchange).
 Then you can copy the [explicit formulas](formulas)
 and test it with our [test vectors](vectors).
+
+Legal
+-----
+
+The pseudocode presented on any of these pages,
+including explicit formulas,
+are provided under either of these terms:
+
+- [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/legalcode)
+- [2-clause BSD](/LICENSE.SNIPPETS.2BSD)
+
+If a page or file hosted on this domain indicates different terms,
+then those different terms take precedence.
+
+This does not grant any additional rights with regards to the the other
+parts of this website;
+in particular, no additional rights are granted for the body text,
+design, CSS or HTML.

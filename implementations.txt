@@ -1,6 +1,6 @@
 {
     title: Known Implementations
-    description: list of know Elligator&nbsp;2 implementations.
+    description: list of known Elligator&nbsp;2 implementations.
 }
 
 Known Elligator&nbsp;2 Implementations
@@ -17,15 +17,16 @@ Complete implementations
 They provide a complete implementation,
 suitable for key exchange.
 
-- __[Libdecaf](https://sourceforge.net/projects/ed448goldilocks/)__
-  Implements a _variant_ of Elligator for Ristretto255
-  (based on Curve255) and Ristretto448 (based on Curve448).
+- __[libdecaf](https://sourceforge.net/projects/ed448goldilocks/)__
+  Implements a _variant_ of Elligator for
+  [ristretto255](https://ristretto.group/)
+  (based on Curve255) and ristretto448 (based on Curve448).
   Implementers seeking to implement Elligator for the Ristretto group
   may want to follow libdecaf instead.
   This would promote compatibility,
   avoid fragmentation,
   and would be just as safe
-  (Libdecaf author basically invented Elligator&nbsp;2).
+  (The libdecaf author basically invented Elligator&nbsp;2).
 
 - __[Monocypher](https://monocypher.org)__
   implements Elligator&nbsp;2 for Curve25519.
@@ -47,12 +48,12 @@ is unknown
 (this is most useful for [Password Authenticated Key
 Agreement](https://en.wikipedia.org/wiki/Password-authenticated_key_agreement)).
 
-- __[Libsodium](https://libsodium.org)__
+- __[libsodium](https://libsodium.org)__
   uses the Elligator&nbsp;2 direct map for Ed25519 and
-  [Ristretto255](https://ristretto.group).
+  [ristretto255](https://ristretto.group).
   For Ed25519 it follows the Map-to-Curve procedure outlined in the
   [Hash to curve RFC draft][RFC].
-  For Ristretto255 it only implements [this mapping][rmap],
+  For ristretto255 it only implements [this mapping][rmap],
   which is indistinguishable from a random oracle.
 
 [RFC]:  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-14
@@ -60,8 +61,8 @@ Agreement](https://en.wikipedia.org/wiki/Password-authenticated_key_agreement)).
 
 - __[Curve25519-Dalek](https://dalek.rs/)__
   uses the Elligator&nbsp;2 direct map for Ed25519 and
-  [Ristretto255](https://ristretto.group).
-  It uses the same strategies as Libsodium.
+  [ristretto255](https://ristretto.group).
+  It uses the same strategies as libsodium.
 
 
 Incomplete implementations
@@ -82,4 +83,3 @@ Incomplete implementations
     <var>p</var>.
   - The [special public key derivation](key-exchange)
     required to use the inverse map safely is missing.
-
