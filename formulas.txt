@@ -67,8 +67,8 @@ Recommended way to implement `inv_sqrt`(<var>x</var>) if
 
     inv_sqrt(x)
       ir        = x^((p - 3) / 4)
-      chi       = x × ir^2
-      is_square = chi != -1
+      legendre  = x × ir^2
+      is_square = legendre != -1
       return ir, is_square
 
 <aside>

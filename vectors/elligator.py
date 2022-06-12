@@ -69,7 +69,7 @@ def dir_map_ref(r):
     Always succeds
     """
     w = -A / (GF(1) + Z * r**2)
-    e = chi(w**3 + A*w**2 + w)
+    e = legendre(w**3 + A*w**2 + w)
     u = e*w - (GF(1)-e)*(A//2)
     v = -e * sqrt(u**3 + A*u**2 + B*u)
     return (u, v)

@@ -106,8 +106,8 @@ def inv_sqrt(x):
     The return value is *not* guaranteed to be non-negative.
     """
     isr       = x**((GF.p - 3) // 4)
-    chi       = x * isr**2    # x**((p-1)/2) == -1, 0, or 1
-    is_square = chi != GF(-1) # use constant time comparison
+    legendre  = x * isr**2         # x**((p-1)/2) == -1, 0, or 1
+    is_square = legendre != GF(-1) # use constant time comparison
     return isr, is_square
 
 core.sqrt     = sqrt

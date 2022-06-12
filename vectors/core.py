@@ -134,7 +134,7 @@ def clamp(scalar):
 ################################
 # Basic square root operations #
 ################################
-def chi(n):
+def legendre(n):
     """Legendre symbol:
 
     returns  0 if n is zero
@@ -144,7 +144,7 @@ def chi(n):
     return n**((GF.p-1)//2)
 
 def is_square(n):
-    c = chi(n)
+    c = legendre(n)
     return c == GF(0) or c == GF(1)
 
 
