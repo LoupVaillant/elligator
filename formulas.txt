@@ -214,10 +214,10 @@ satisfies the following:
 
 Then the representative of <var>P</var> is computed thus:
 
-- If <var>v</var> is a principal square root,
-  <var>r</var>&nbsp;=&nbsp;&radic;(&minus;<var>u</var>&nbsp;/&nbsp;(<var>Z</var>&nbsp;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)))
-- If <var>v</var> is _not_ a principal square root,
-  <var>r</var>&nbsp;=&nbsp;&radic;(&minus;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)&nbsp;/&nbsp;(<var>Z</var>&nbsp;<var>u</var>))
+- <var>r</var>&nbsp;=&nbsp;&radic;(&minus;<var>u</var>&nbsp;/&nbsp;(<var>Z</var>&nbsp;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)))
+  when <var>v</var> is non-negative,
+- <var>r</var>&nbsp;=&nbsp;&radic;(&minus;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)&nbsp;/&nbsp;(<var>Z</var>&nbsp;<var>u</var>))
+  otherwise.
 
 The recommended way to test the eligibility of a point
 (<var>u</var>,&nbsp;<var>v</var>) and compute its representative
