@@ -70,7 +70,7 @@ Incomplete implementations
 
 - __[Kleshni](https://github.com/Kleshni/Elligator-2)__
   implements Elligator&nbsp;2 for Curve25519.
-  It is almost bit-for-bit compatible with Monocypher.
+  It is very close to Monocypher.
   The only difference is that the direct map does not ignore the top two
   bits.
   Instead all 256 bits are interpreted and reduced modulo <var>p</var>.

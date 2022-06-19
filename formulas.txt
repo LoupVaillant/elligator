@@ -15,13 +15,15 @@ So instead of writing regular conditionals we use `CMOVE()` and
 `CSWAP()`.
 
 The `CMOVE(x, y, condition)` operation is a conditional move.
-It means &ldquo;if condition, assign y to x&rdquo;:
+It means &ldquo;if `condition`, assign <var>y</var> to
+<var>x</var>&rdquo;:
 
     if condition
         x = y
 
 The `CSWAP(x, y, condition)` operation is a conditional swap.
-It means &ldquo;if condition, swap the values of x and y&rdquo;:
+It means &ldquo;if `condition`, swap the values of <var>x</var> and
+<var>y</var>&rdquo;:
 
     if condition
         x, y = y, x
@@ -78,7 +80,7 @@ Such fields are rarely specified in elliptic curve standards.
 
 In such cases,
 start by recovering a square root;
-guidance for this so can be found in
+guidance for this can be found in
 [I-D.draft-irtf-cfrg-hash-to-curve-14, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-14#appendix-I).
 Once one of the two square roots has been determined,
 compute the multiplicative inverse thereof to get
@@ -277,8 +279,6 @@ the Montgomery <var>u</var> coordinate thus:
       u = u * T
       return u
 
-- <var>u</var>&nbsp;=&nbsp;(<var>z</var>&nbsp;+&nbsp;<var>y</var>)&nbsp;/&nbsp;(<var>z</var>&nbsp;-&nbsp;<var>y</var>)
-
 
 ### Curve448
 
@@ -363,9 +363,9 @@ Finally, we can compute the scalar multiplication
 <var>i</var>.<var>H</var> by selecting the right low order point:
 
     select_lop(i):
-      x = select(x, sqrt_m1, i  )
-      y = select(y, 1      , i+2)
-      return (x, y)
+      lx = select(x, sqrt_m1, i  )
+      ly = select(y, 1      , i+2)
+      return (lx, ly)
 
 
 ### Curve448
@@ -393,4 +393,4 @@ All we have to do is conditionally negate and swap <var>x</var> and
       CSWAP(x,  y, l)
       CMOVE(x, -x, h)
       CMOVE(y, -y, l XOR h)
-      return x, y, z
+      return x, y

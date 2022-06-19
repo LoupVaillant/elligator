@@ -107,7 +107,7 @@ Before actually defining the maps, we need to fix those parameters.
   Most of the time though,
   we will be using a prime field,
   where <var>q</var>&nbsp;=&nbsp;<var>p</var>.
-  Recall that <var>q</var>&nbsp;=&nbsp;2 is not possible because
+  Recall that <var>p</var>&nbsp;=&nbsp;2 is not possible because
   the field must have an odd characteristic.
 
   Examples of finite fields include
@@ -144,16 +144,14 @@ Before actually defining the maps, we need to fix those parameters.
   We need a way to determine which is the positive one for the direct
   and inverse maps to be deterministic.
 
-  For 
-  prime fields GF(<var>q</var>) where
-  <var>q</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4),
+  For prime fields GF(<var>p</var>) where
+  <var>p</var>&nbsp;&equiv;&nbsp;3&nbsp;(mod&nbsp;4),
   we can pick
-  &radic;<var>s</var>&nbsp;=&nbsp;<var>s</var><sup>(<var>q</var>+1)/4</sup>,
+  &radic;<var>s</var>&nbsp;=&nbsp;<var>s</var><sup>(<var>p</var>+1)/4</sup>,
   which is the unique square root that is also a square
   (the _principal square root_).
 
-  For other prime fields,
-  where <var>q</var>&nbsp;&equiv;&nbsp;1&nbsp;(mod&nbsp;4),
+  For other fields,
   we chose the set of non-negative field elements somewhat arbitrarily.
   Common choices are the set
   {0,&nbsp;1,&nbsp;…&nbsp;(<var>q</var>&minus;1)/2}
@@ -170,18 +168,20 @@ The direct map
 --------------
 
 First, we need to define the `legendre()` function;
-it computes the [Legendre symbol](https://en.wikipedia.org/wiki/Legendre_symbol),
+it computes the [Legendre symbol](https://en.wikipedia.org/wiki/Legendre_symbol)
 of a field element <var>f</var>:
 
 - `legendre`(<var>f</var>)&nbsp;=&nbsp;0 if <var>f</var> is zero.
-- `legendre`(<var>f</var>)&nbsp;=&nbsp;1 if <var>f</var> is a square.
+- `legendre`(<var>f</var>)&nbsp;=&nbsp;1 if <var>f</var>
+  is a non-zero square.
 - `legendre`(<var>f</var>)&nbsp;=&nbsp;&minus;1 if <var>f</var> is not a
   square.
 
 This can be constructed using the square root checking functions needed
 to find the chosen non-square <var>Z</var> above.
-In prime fields, it can also succinctly be defined as:
-`legendre`(<var>f</var>)&nbsp;=&nbsp;<var>f</var><sup>(<var>q</var>&nbsp;&minus;&nbsp;1)&nbsp;/&nbsp;2</sup>.
+In a prime fields GF(<var>p</var>),
+it can be defined as:
+`legendre`(<var>f</var>)&nbsp;=&nbsp;<var>f</var><sup>(<var>p</var>&nbsp;&minus;&nbsp;1)&nbsp;/&nbsp;2</sup>.
 
 The map itself takes any field element <var>r</var> (the
 representative),
@@ -214,10 +214,10 @@ Assuming those conditions hold, the representative <var>r</var> of
 <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>) is computed
 as follows:
 
-- If <var>v</var> is non-negative,
-  <var>r</var>&nbsp;=&nbsp;&radic;(&minus;<var>u</var>&nbsp;/&nbsp;(<var>Z</var>&nbsp;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)))
-- If <var>v</var> is negative,
-  <var>r</var>&nbsp;=&nbsp;&radic;(&minus;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)&nbsp;/&nbsp;(<var>Z</var>&nbsp;<var>u</var>))
+- <var>r</var>&nbsp;=&nbsp;&radic;(&minus;<var>u</var>&nbsp;/&nbsp;(<var>Z</var>&nbsp;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)))
+  if <var>v</var> is non-negative,
+- <var>r</var>&nbsp;=&nbsp;&radic;(&minus;(<var>u</var>&nbsp;+&nbsp;<var>A</var>)&nbsp;/&nbsp;(<var>Z</var>&nbsp;<var>u</var>))
+  if <var>v</var> is strictly negative.
 
 Note:
 if <var>P</var>&nbsp;=&nbsp;(0,&nbsp;0) then

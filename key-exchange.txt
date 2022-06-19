@@ -286,15 +286,6 @@ and we have to randomly flip that sign anyway to cover the whole curve.
 but those are an entirely separate problem.)
 </aside>
 
-Once we have <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;?)
-we just need to check whether it can be mapped;
-this only depends on <var>u</var>.
-If it cannot,
-we try again with a new random scalar <var>s</var>.
-If it can,
-we chose the sign of <var>v</var> at random
-then apply the inverse map.
-
 
 ### Method&nbsp;2: use a generator of the whole curve
 
@@ -373,11 +364,14 @@ Curve448:
 Step&nbsp;3: Apply the inverse map
 ----------------------------------
 
-To apply the [inverse map](map),
-we suggest you use our [optimised formulas](formulas).
+Once we have the public key
+<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;?)
+we can try and apply the [inverse map](map).
+To do this we suggest you use our [optimised formulas](formulas).
 
 Note that not all public keys are eligible for the inverse map,
-so this step will fail half the time on average.
+so depending on the value of <var>u</var> this step will fail half the
+time on average.
 When it does,
 just go back to step (1) and generate a new random ephemeral key.
 
@@ -437,9 +431,9 @@ Here&#8217;s what a good low level deterministic API might look like:
     void generate_public_key(uint8_t       public_key[KEY_SIZE],
                              const uint8_t secret_key[KEY_SIZE]);
 
-    int  inverse_map(uint8_t       representative[KEY_SIZE],
-                     const uint8_t public_key    [KEY_SIZE],
-                     uint8_t       random_tweak);
+    int inverse_map(uint8_t       representative[KEY_SIZE],
+                    const uint8_t public_key    [KEY_SIZE],
+                    uint8_t       random_tweak);
 
     void direct_map(uint8_t       public_key    [KEY_SIZE],
                     const uint8_t representative[KEY_SIZE]);
@@ -491,3 +485,33 @@ itself:
 
 It could call `key_pair_deterministic()` under the hood,
 or use the low level functions directly.
+
+
+### Alternative low-level API
+
+Edwards curves and [Ristretto](https://ristretto.group/) implementations
+tend to have readily available point addition,
+which we can leverage to simplify the low-level API.
+The idea is to use the _regular_ public key generation then add a random
+low order point in the same function that applies the inverse map.
+
+This effectively removes one function from the low level API:
+
+    int inverse_map(uint8_t       representative[KEY_SIZE],
+                    const uint8_t public_key    [KEY_SIZE],
+                    uint8_t       random_tweak);
+
+    void direct_map(uint8_t       public_key    [KEY_SIZE],
+                    const uint8_t representative[KEY_SIZE]);
+
+
+There is one crucial difference however:
+now the `tweak` determines the value of the low order component,
+which influences whether the inverse map succeeds or fails.
+Make sure you don't reuse the random bits of the `tweak` in this case.
+
+Though this low-level API may be less error prone than the first,
+writing a high-level one is still recommended.
+We suggest you implement `key_pair_deterministic()` and
+`key_pair_easy()` on top of regular public key generation and the
+`inverse_map()` above.
