@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 # This file is dual-licensed.  Choose whichever licence you want from
 # the two licences listed below.
 #
@@ -49,46 +51,42 @@
 # with this software.  If not, see
 # <https://creativecommons.org/publicdomain/zero/1.0/>
 
-CC            = gcc -std=c99
-CFLAGS        = -Wall -Wextra -pedantic -O3
-PYFILES       = core.py elligator.py gen_vectors.py
-VECTORS_25519 = curve25519_direct.vec  \
-                curve25519_inverse.vec \
-                curve25519_scalarmult.vec
-VECTORS_448   = curve448_direct.vec  \
-                curve448_inverse.vec \
-                curve448_scalarmult.vec
+from curve25519 import *
+from elligator import *
+from random    import randrange
+from random    import seed
+import hashlib
 
-.PHONY: all test clean
+def map_to_curve(random):
+    """Maps a uniform random 256 bit number to a curve point
 
-all: $(VECTORS_25519) $(VECTORS_448) hash_to_curve25519.vec
+    This is compatible with libsodium.
 
-test: test25519 test_hash_to_25519
+    Contrary to what the Hash to Curve RFC recommends, we don't use a
+    big hash to reduce it modulo p.  Instead we just chop off one
+    bit. The resulting field is close enough to a power of two that the
+    deviation from perfect randomness is undetectable.
+    """
+    y_sign  = random // 2**255            # Get sign of Edwards x coordinate
+    r       = random %  2**255            # Elligator representative
+    u, _    = dir_map(GF(r))              # Ignore Montgomery v coordinate
+    x, y, z = to_edwards(u)               # Convert to Edwards
+    if x.to_num() % 2 != y_sign: x = -x   # Set sign of Edwards x coordinate
+    x, y, z = Ed.scalarmult((x, y, z), 8) # Multiply by cofactor
 
-test25519: test25519.out $(VECTORS_25519)
-	./$^
+    # Serialise Edwards point (divide, get sign of x)
+    z       = z.invert()
+    y       = y * z
+    x       = x * z
+    x_sign  = x.to_num() % 2              # Negative means odd here.
+    point   = y.to_num() + x_sign * 2**255
+    return point
 
-test_hash_to_25519: test_hash_to_25519.out hash_to_curve25519.vec
-	./$^
-
-curve25519_%.vec: $(PYFILES) curve25519.py
-	./gen_vectors.py curve25519 $* >$@
-
-curve448_%.vec: $(PYFILES) curve448.py
-	./gen_vectors.py curve448 $* >$@
-
-hash_to_curve25519.vec: hash_to_curve25519.py
-	./$< >$@
-
-test25519.out: test25519.c
-	$(CC) $(CFLAGS) $< -o $@               \
-            $$(pkg-config monocypher --cflags) \
-            $$(pkg-config monocypher --libs)
-
-test_hash_to_25519.out: test_hash_to_25519.c
-	$(CC) $(CFLAGS) $< -o $@              \
-            $$(pkg-config libsodium --cflags) \
-            $$(pkg-config libsodium --libs)
-
-clean:
-	rm -f *.out *.vec
+# Generate the actual test vectors, print them in stdout.
+seed(12345)  # cheap determinism for the random test vectors
+vectors = []
+for i in range(64):
+    r = randrange(2**256)
+    p = map_to_curve(r)
+    vectors.append(vectors_to_string([r, p]))
+print("\n\n".join(vectors))
