@@ -114,7 +114,7 @@ def to_hex(n):
 def vectors_to_string(values):
     strings = []
     for v in values:
-        if   type(v) is GF  : strings.append(to_hex(v.val % GF.p))
+        if   type(v) is GF  : strings.append(to_hex(v.to_num()))
         elif type(v) is bool: strings.append("01:" if v else "00:")
         elif type(v) is str : strings.append(v)
         else                : strings.append(to_hex(v))
