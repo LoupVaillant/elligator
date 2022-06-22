@@ -1,5 +1,6 @@
 map
 key-exchange
+hash-to-curve
 formulas
 vectors
 implementations

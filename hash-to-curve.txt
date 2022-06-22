@@ -1,0 +1,116 @@
+{
+    title: Hash to Curve
+    description: How to hash inputs to an elliptic curve point
+}
+
+Hash to Curve
+=============
+
+One important use of Elligator is mapping inputs to elliptic curve
+points.
+Ideally we want a procedure that's indistinguishable from a random
+oracle,
+though in practice this is not always strictly necessary.
+The [Hash to Curve RFC
+draft](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-14)
+recommends two procedures.
+The simpler one is done in three steps:
+
+    encode_to_curve(msg)
+      u = hash_to_field(msg, 1)
+      Q = map_to_curve(u[0])
+      P = clear_cofactor(Q)
+      return P
+
+This procedure hits only half of the curve,
+so it is not indistinguishable from a random oracle.
+For most use cases however this is enough.
+When we do need a proper random oracle the procedure is a bit more
+complex:
+
+    hash_to_curve(msg)
+      u0, u1 = hash_to_field(msg, 2)
+      Q0     = map_to_curve(u0)
+      Q1     = map_to_curve(u1)
+      R      = Q0 + Q1
+      P      = clear_cofactor(R)
+      return P
+
+
+Hash to Field
+-------------
+
+This function hashes an input into one or more field elements.
+It MUST be indistinguishable from a random oracle.
+
+When we use a prime field GF(<var>p</var>) where <var>p</var> is very
+close to a power of two
+(as is the case for Curve25519 and Curve448),
+we can use a regular key derivation function like HKDF
+then interpret the result directly as a field element.
+The resulting distribution will be indistinguishable from a uniform
+random distribution in practice.
+
+If however <var>p</var> is _not_ close to a power of two,
+it is best to first derive hashes that are twice the size of field
+elements,
+interpret those hashes as numbers,
+which we then reduce modulo <var>p</var>.
+
+
+Map to Curve
+------------
+
+Just use Elligator&nbsp;2's [direct map](map).
+
+For protocols requiring more than scalar multiplication
+we generally convert the Montgomery curve point given to us by
+Elligator&nbsp;2 to an equivalent (twisted) Edwards point.
+
+
+Clear cofactor
+--------------
+
+This steps project the point mapped by Elligator2 to the prime order
+subgroup of the curve.
+In practice we can just multiply the point by the cofactor.
+For Curve25519 this requires only 3 point doublings
+(2<sup>3</sup>&nbsp;=&nbsp;8).
+For Curve448 we need only two (2<sup>2</sup>&nbsp;=&nbsp;4).
+
+This step can be skipped when the `map_to_curve()` step maps to the
+[Ristretto group](https://ristretto.group).
+
+
+Example
+-------
+
+[Libsodium](https://doc.libsodium.org/advanced/point-arithmetic#elligator-2-map)
+provides the `crypto_core_ed25519_from_uniform()` function,
+which fuses the `map_to_curve()` and `clear_cofactor()` steps above.
+It starts from 32 random bytes interpreted as a Little Endian number:
+
+    def map_to_curve(random):
+      y_sign  = random / 2^255    # Most significant bit
+      r       = random % 2^255    # Representative (field element)
+      u       = elligator2_map(r) # We ignore the v coordinate
+
+      # Convert u to an Edwards point
+      # There are 2 possibilities: (x, y), and (-x, y)
+      y = (u - 1) / (u + 1)
+      x = sqrt((y^2 - 1) / ((-121665 / 121666) * y^2 + 1))
+
+      # Set the sign of the x coordinate (negative if y_sign == 1)
+      # Here we consider that odd field elements are negative
+      if x % 2 != y_sign:
+          x = -x
+
+      # Multiply the resulting point by the cofactor (8)
+      P       = x, y
+      P       = point_add(P, P)
+      P       = point_add(P, P)
+      P       = point_add(P, P)
+      return P
+
+We provide [test vectors](vectors/hash_to_curve25519.vec) for this
+function.
