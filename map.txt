@@ -160,7 +160,7 @@ Before actually defining the maps, we need to fix those parameters.
 <aside>
 For the implementation of square roots and checking whether a number is
 a square root in GF(<var>q</var>),
-refer to [I-D.draft-irtf-cfrg-hash-to-curve-14, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-14#appendix-I).
+refer to [I-D.draft-irtf-cfrg-hash-to-curve-16, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-16#appendix-I).
 </aside>
 
 

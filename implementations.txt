@@ -56,7 +56,7 @@ Agreement](https://en.wikipedia.org/wiki/Password-authenticated_key_agreement)).
   For ristretto255 it only implements [this mapping][rmap],
   which is indistinguishable from a random oracle.
 
-[RFC]:  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-14
+[RFC]:  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-16
 [rmap]: https://ristretto.group/formulas/elligator.html
 
 - __[Curve25519-Dalek](https://dalek.rs/)__

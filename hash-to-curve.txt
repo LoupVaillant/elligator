@@ -12,7 +12,7 @@ Ideally we want a procedure that's indistinguishable from a random
 oracle,
 though in practice this is not always strictly necessary.
 The [Hash to Curve RFC
-draft](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-14)
+draft](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-16)
 recommends two procedures.
 The simpler one is done in three steps:
 
