@@ -24,9 +24,9 @@ The simpler one is done in three steps:
 
 This procedure hits only half of the curve,
 so it is not indistinguishable from a random oracle.
-For most use cases however this is enough.
-When we do need a proper random oracle the procedure is a bit more
-complex:
+For most use cases, however, this is enough.
+When we do need a proper instantiation matching the random oracle
+model, the procedure is a bit more complex:
 
     hash_to_curve(msg)
       u0, u1 = hash_to_field(msg, 2)
@@ -43,7 +43,7 @@ Hash to Field
 This function hashes an input into one or more field elements.
 It MUST be indistinguishable from a random oracle.
 
-When we use a prime field GF(<var>p</var>) where <var>p</var> is very
+When we use a prime field GF(<var>q</var>) where <var>q</var> is very
 close to a power of two
 (as is the case for Curve25519 and Curve448),
 we can use a regular key derivation function like HKDF
@@ -51,11 +51,11 @@ then interpret the result directly as a field element.
 The resulting distribution will be indistinguishable from a uniform
 random distribution in practice.
 
-If however <var>p</var> is _not_ close to a power of two,
+If however <var>q</var> is _not_ close to a power of two,
 it is best to first derive hashes that are twice the size of field
 elements,
 interpret those hashes as numbers,
-which we then reduce modulo <var>p</var>.
+which we then reduce modulo <var>q</var>.
 
 
 Map to Curve
@@ -88,7 +88,7 @@ Example
 [Libsodium](https://doc.libsodium.org/advanced/point-arithmetic#elligator-2-map)
 provides the `crypto_core_ed25519_from_uniform()` function,
 which fuses the `map_to_curve()` and `clear_cofactor()` steps above.
-It starts from 32 random bytes interpreted as a Little Endian number:
+It starts from 32 random bytes interpreted as a little endian number:
 
     def map_to_curve(random):
       y_sign  = random / 2^255    # Most significant bit
