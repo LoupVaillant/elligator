@@ -8,8 +8,8 @@ Hash to Curve
 
 One important use of Elligator is mapping inputs to elliptic curve
 points.
-Ideally we want a procedure that's indistinguishable from a random
-oracle,
+Ideally we want a procedure that works in a way that matches the random
+oracle model,
 though in practice this is not always strictly necessary.
 The [Hash to Curve RFC
 draft](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-16)
@@ -23,7 +23,7 @@ The simpler one is done in three steps:
       return P
 
 This procedure hits only half of the curve,
-so it is not indistinguishable from a random oracle.
+so it is not like a random oracle.
 For most use cases, however, this is enough.
 When we do need a proper instantiation matching the random oracle
 model, the procedure is a bit more complex:
@@ -41,7 +41,8 @@ Hash to Field
 -------------
 
 This function hashes an input into one or more field elements.
-It MUST be indistinguishable from a random oracle.
+It MUST be match the expectations for a random oracle
+as closely as possible.
 
 When we use a prime field GF(<var>p</var>) where <var>p</var> is very
 close to a power of two
