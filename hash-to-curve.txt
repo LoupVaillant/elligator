@@ -43,7 +43,7 @@ Hash to Field
 This function hashes an input into one or more field elements.
 It MUST be indistinguishable from a random oracle.
 
-When we use a prime field GF(<var>q</var>) where <var>q</var> is very
+When we use a prime field GF(<var>p</var>) where <var>p</var> is very
 close to a power of two
 (as is the case for Curve25519 and Curve448),
 we can use a regular key derivation function like HKDF
@@ -51,11 +51,25 @@ then interpret the result directly as a field element.
 The resulting distribution will be indistinguishable from a uniform
 random distribution in practice.
 
-If however <var>q</var> is _not_ close to a power of two,
+<aside>
+On this page,
+we use the notation GF(<var>p</var>)
+rather than GF(<var>q</var>):
+Whereas the instances of GF(<var>q</var>) mean a prime field
+(<var>q</var>&nbsp;=&nbsp;<var>p</var>)
+or an extension field
+(<var>q</var>&nbsp;=&nbsp;<var>p</var><sup><var>n</var></sup>),
+we only talk about the former case here;
+extension fields are out of scope.
+To make this clear,
+we use the notation GF(<var>p</var>).
+</aside>
+
+If however <var>p</var> is _not_ close to a power of two,
 it is best to first derive hashes that are twice the size of field
 elements,
 interpret those hashes as numbers,
-which we then reduce modulo <var>q</var>.
+which we then reduce modulo <var>p</var>.
 
 
 Map to Curve
