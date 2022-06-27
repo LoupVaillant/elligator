@@ -1,6 +1,7 @@
 {
   title: Elligator
-  description: Landing page
+  description: A way to hide a cryptographic key exchange using
+               elliptic curves as random noise.
 }
 
 **Elligator** is a way to hide a cryptographic key exchange using
