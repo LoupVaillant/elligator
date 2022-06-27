@@ -81,7 +81,7 @@ Such fields are rarely specified in elliptic curve standards.
 In such cases,
 start by recovering a square root;
 guidance for this can be found in
-[I-D.draft-irtf-cfrg-hash-to-curve-14, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-14#appendix-I).
+[I-D.draft-irtf-cfrg-hash-to-curve-16, appendix&nbsp;I](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-16#appendix-I).
 Once one of the two square roots has been determined,
 compute the multiplicative inverse thereof to get
 the inverse square root.
