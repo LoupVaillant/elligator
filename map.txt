@@ -114,7 +114,7 @@ Before actually defining the maps, we need to fix those parameters.
   GF(2<sup>255</sup>&nbsp;&minus;&nbsp;19),
   used by Curve25519,
   and
-  GF(2<sup>448</sup>&nbsp;&minus;&nbsp;2<sup>224</sup>&nbsp;&minus;&nbsp;19),
+  GF(2<sup>448</sup>&nbsp;&minus;&nbsp;2<sup>224</sup>&nbsp;&minus;&nbsp;1),
   used by Curve448.
 
 - The **elliptic curve**, defined by the equation

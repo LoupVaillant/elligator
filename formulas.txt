@@ -192,9 +192,9 @@ such that
 ### Curve448 parameters
 
 <table>
-<tr><td><var>q</var></td><td>Prime&nbsp;field</td><td>2<sup>448</sup>&nbsp;&minus;&nbsp;<sup>224</sup>&nbsp;&minus;&nbsp;1</td></tr>
+<tr><td><var>q</var></td><td>Prime&nbsp;field</td><td>2<sup>448</sup>&nbsp;&minus;&nbsp;2<sup>224</sup>&nbsp;&minus;&nbsp;1</td></tr>
 <tr><td><var>A</var></td><td>Curve&nbsp;constant</td><td>156326</td></tr>
-<tr><td><var>B</var></td><td>Curve&nbsp;constant</td><td>&minus;1</td></tr>
+<tr><td><var>B</var></td><td>Curve&nbsp;constant</td><td>1</td></tr>
 <tr><td><var>Z</var></td><td>Non-square</td><td>&minus;1</td></tr>
 <tr><td><var>Z<sub>u</sub></var></td><td>&minus;<var>Z</var>&nbsp;</td><td>1</td></tr>
 <tr><td><var>Z<sub>v</sub></var></td><td>&radic;<var>Z<sub>u</sub></var></td><td>1</td></tr>
