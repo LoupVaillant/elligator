@@ -74,4 +74,5 @@ Here are the test vectors, for Curve25519 and Curve448 respectively:
 - [curve448\_inverse.vec](curve448_inverse.vec)
 - [curve448\_scalarmult.vec](curve448\_scalarmult.vec)
 
-They are generated with [these scripts](/elligator-reference.tar.gz).
+They are generated with [these scripts](/elligator-reference.tar.gz)
+(also available in [html](/src)).

@@ -17,12 +17,8 @@ for file in $(find . -name _ussm -prune -o -type f -print |\
     ln $file _ussm/www/$file
 done
 
-# remove source code folder (we'll only expose the tarball)
-rm -rf _ussm/www/src
-rm -rf _ussm/tmp/src
-
 # Generate test vectors
-(cd vectors && make && make test)
+(cd src && make && make test)
 
 # Make a tarball for the source code
 # The options here were taken from:
@@ -31,7 +27,7 @@ rm -rf _ussm/tmp/src
 # The --mtime value was chosen arbitrarily (same as Monocypher's)
 TARBALL=../_ussm/www/elligator-reference.tar
 #rm $TARBALL  # so we can overwrite it
-(cd vectors && \
+(cd src && \
      tar --transform='flags=r;s|^|elligator-reference/|' \
          --sort=name \
          --mtime=@1587513600 \
@@ -49,8 +45,22 @@ TARBALL=../_ussm/www/elligator-reference.tar
      gzip -n $TARBALL # the -n option avoids timestamp metadata
 )
 
+
 # Run the modules
 ussm-core
+
+# Append source code to the original core file
+for source in $(find src -name "*.py"); do
+    tmp=_ussm/tmp/$source
+    core=_ussm/tmp/src/$(basename -s ".py" $source).core
+    html=_ussm/tmp/src/$(basename -s ".py" $source).html
+    echo "pygmentize $source"
+    cp $source $tmp
+    sed -e '1,/creativecommons.org/d' -i $tmp
+    pygmentize -o $html $tmp
+    cat $html >> $core
+done
+
 ussm-title
 ussm-description
 ussm-menu         # must be run after ussm-title

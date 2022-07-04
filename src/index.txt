@@ -1,0 +1,19 @@
+{
+        title: Source code
+        description: Python reference implementation
+}
+
+Source code
+===========
+
+A reference implementation in Python 3 for Curve25519 and Curve448.
+
+- **[elligator.py](elligator):** The map and inverse map.
+- **[core.py](core):** Core curve code & utilities.
+- **[curve25519.py](curve25519):**
+  Curve25519 specific code and parameters.
+- **[curve448.py](curve448):** Curve448 specific code and parameters.
+- **[hash\_to\_curve25519.py](hash_to_curve25519):**
+  Map random numbers to a Curve25519 points.
+- **[gen_vectors.py](gen_vectors):**
+  generate test vectors (mostly boilerplate).

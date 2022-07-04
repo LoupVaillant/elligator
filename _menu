@@ -2,5 +2,6 @@ map
 key-exchange
 hash-to-curve
 formulas
+src
 vectors
 implementations

@@ -1,0 +1,7 @@
+{
+    title: gen_vectors.py
+    description: Generate test vectors (mostly boilerplate)
+}
+
+gen_vectors.py
+==============

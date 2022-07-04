@@ -91,8 +91,9 @@ Show me the code.
 -----------------
 
 We have a list of [known implementations](implementations).
-We also made a [reference implementation](elligator-reference.tar.gz) in
-Python (not for production).
+We also made a reference implementation
+([html](src), [tarball](/elligator-reference.tar.gz))
+in Python (not for production).
 
 If you want to implement Elligator yourself
 you should read [how Elligator works](map),

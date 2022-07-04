@@ -52,32 +52,32 @@
 CC            = gcc -std=c99
 CFLAGS        = -Wall -Wextra -pedantic -O3
 PYFILES       = core.py elligator.py gen_vectors.py
-VECTORS_25519 = curve25519_direct.vec  \
-                curve25519_inverse.vec \
-                curve25519_scalarmult.vec
-VECTORS_448   = curve448_direct.vec  \
-                curve448_inverse.vec \
-                curve448_scalarmult.vec
+VECTORS_25519 = ../vectors/curve25519_direct.vec  \
+                ../vectors/curve25519_inverse.vec \
+                ../vectors/curve25519_scalarmult.vec
+VECTORS_448   = ../vectors/curve448_direct.vec  \
+                ../vectors/curve448_inverse.vec \
+                ../vectors/curve448_scalarmult.vec
 
 .PHONY: all test clean
 
-all: $(VECTORS_25519) $(VECTORS_448) hash_to_curve25519.vec
+all: $(VECTORS_25519) $(VECTORS_448) ../vectors/hash_to_curve25519.vec
 
 test: test25519 test_hash_to_25519
 
 test25519: test25519.out $(VECTORS_25519)
 	./$^
 
-test_hash_to_25519: test_hash_to_25519.out hash_to_curve25519.vec
+test_hash_to_25519: test_hash_to_25519.out ../vectors/hash_to_curve25519.vec
 	./$^
 
-curve25519_%.vec: $(PYFILES) curve25519.py
+../vectors/curve25519_%.vec: $(PYFILES) curve25519.py
 	./gen_vectors.py curve25519 $* >$@
 
-curve448_%.vec: $(PYFILES) curve448.py
+../vectors/curve448_%.vec: $(PYFILES) curve448.py
 	./gen_vectors.py curve448 $* >$@
 
-hash_to_curve25519.vec: hash_to_curve25519.py
+../vectors/hash_to_curve25519.vec: hash_to_curve25519.py
 	./$< >$@
 
 test25519.out: test25519.c
@@ -91,4 +91,4 @@ test_hash_to_25519.out: test_hash_to_25519.c
             $$(pkg-config libsodium --libs)
 
 clean:
-	rm -f *.out *.vec
+	rm -f *.out ../vectors/*.vec

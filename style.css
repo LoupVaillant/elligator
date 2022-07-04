@@ -184,7 +184,7 @@ article a:hover {
 }
 
 /* fonts */
-code {
+code, div.highlight pre {
     font-family: "Source Code Pro", monospace;
     font-size: 95%;
 }
@@ -266,6 +266,23 @@ pre {
 pre code {
     padding: 0.5rem;
 }
+
+/* Whole source files */
+div.highlight pre {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* syntax highlighting */
+
+div.highlight pre span.c1 { color: #884444; }
+div.highlight pre span.sd { color: #cc4422; }
+div.highlight pre span.s1 { color: #cc4422; }
+div.highlight pre span.s2 { color: #cc4422; }
+div.highlight pre span.k  { color: #4400cc; }
+div.highlight pre span.nf { color: #007700; }
+
 
 /* mathematical and code variables */
 var {

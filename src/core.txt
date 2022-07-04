@@ -1,0 +1,7 @@
+{
+    title: core.py
+    description: Core curve code & utilities
+}
+
+core.py
+=======
