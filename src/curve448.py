@@ -168,7 +168,7 @@ else:
 # Low order point (of order 4), used to add the cofactor component
 # There are 2 such points: (1, 0) and (-1, 0)
 # We chose (1, 0) somewhat arbitrarily
-Ed.lop = (GF( 1), GF(0), GF(1))
+Ed.lop = (GF(1), GF(0), GF(1))
 
 # "Dirty" Base point, that generates the whole curve.
 # mt_base_c = mt_base + (lop * co_clear)
