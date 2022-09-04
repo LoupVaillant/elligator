@@ -1,0 +1,192 @@
+{
+  title: Elligator inception
+  description: How Elligator&nbsp;2 was invented.
+}
+
+Elligator inception
+===================
+
+At a first glance,
+Elligator&nbsp;2 looks like black magic.
+To unravel its mysteries,
+it helps to look into [how it was conceived][ED].
+Turns out,
+as is often the case with such elegant designs,
+the core idea is actually fairly simple.
+
+[ED]: https://ecc2015.math.u-bordeaux1.fr/documents/hamburg.pdf
+
+The problem
+-----------
+
+We want to map arbitrary numbers to elliptic curve points.
+We should do so in constant time,
+and the mapping needs to be uniform,
+or close enough to uniform.
+The curves we're interested in have the form
+<var>v</var><sup>2</sup>&nbsp;=&nbsp;<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u</var>.
+We want to map a representative <var>r</var> to a point
+(<var>u</var>,&nbsp;<var>v</var>) that satisfies this equation.
+
+Merely trying <var>u</var>&nbsp;=&nbsp;<var>r</var> does not work,
+because
+<var>r</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var><var>r</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>r</var>
+will not always have a square root.
+In fact, this problem is the whole _point_ of Elligator:
+random numbers will fail this condition half the time,
+while <var>u</var> coordinates never do.
+This statistical difference is what allows attackers to distinguish
+them.
+
+We could also try <var>r</var>, <var>r</var>+1, <var>r</var>+2 etc.
+until we find one that does work,
+but this is neither constant time nor uniform.
+
+
+The solution
+------------
+
+The idea that ended up working was the following:
+instead of trying to map <var>r</var> to a single <var>u</var>
+coordinate,
+we map it to _two_ <var>u<sub>1</sub></var> and <var>u<sub>2</sub></var>
+coordinates,
+such that the ratio
+<var>v<sub>1</sub></var><sup>2</sup>&nbsp;/&nbsp;<var>v<sub>2</sub></var><sup>2</sup>
+is not a square.
+This will guarantee that either <var>u<sub>1</sub></var> or
+<var>u<sub>2</sub></var> will be on the curve,
+and the other will not.
+We then just need to select the right one.
+
+<aside>
+Recall that in prime fields,
+when <var>a</var>&nbsp;/&nbsp;<var>b</var> (or <var>a</var><var>b</var>)
+is not a square,
+then either <var>a</var> or <var>b</var> is a square,
+and the other is not.
+</aside>
+
+
+Choosing <var>u<sub>1</sub></var> and <var>u<sub>2</sub></var>
+--------------------------------------------------------------
+
+The second insight here is using the ratio
+<var>v<sub>1</sub></var><sup>2</sup>&nbsp;/&nbsp;<var>v<sub>2</sub></var><sup>2</sup>
+as a stepping stone.
+Instead of trying to map <var>r</var> to some <var>u<sub>1</sub></var>
+and <var>u<sub>2</sub></var> directly we map it to a single non-square
+number that we decide _is_ the ratio.
+The easiest way to do this is to square <var>r</var> then multiply it
+by an arbitrary non-square constant <var>Z</var>.
+This leads to __eq1:__
+<var>Z</var><var>r</var><sup>2</sup>&nbsp;=&nbsp;<var>v<sub>1</sub></var><sup>2</sup>&nbsp;/&nbsp;<var>v<sub>2</sub></var><sup>2</sup>.
+
+
+This is just a stepping stone though:
+we need to map to _two_ numbers,
+and so far we only had _one_ constraint.
+We need a second one to get rid of the degree of freedom we have left.
+Recall what our ratio is made of:
+
+- <var>v<sub>1</sub></var><sup>2</sup>&nbsp;=&nbsp;<var>u<sub>1</sub></var><sup>3</sup>&nbsp;+&nbsp;<var>A<var>u<sub>1</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u<sub>1</sub></var>&nbsp;=&nbsp;<var>u<sub>1</sub></var>(<var>u<sub>1</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A<var>u<sub>1</sub></var>&nbsp;+&nbsp;<var>B</var>)
+- <var>v<sub>2</sub></var><sup>2</sup>&nbsp;=&nbsp;<var>u<sub>2</sub></var><sup>3</sup>&nbsp;+&nbsp;<var>A<var>u<sub>2</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u<sub>2</sub></var>&nbsp;=&nbsp;<var>u<sub>2</sub></var>(<var>u<sub>2</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A<var>u<sub>2</sub></var>&nbsp;+&nbsp;<var>B</var>)
+
+Now let's add that second constraint.
+One that works is deciding that
+(<var>u<sub>1</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A</var><var>u<sub>1</sub></var>&nbsp;+&nbsp;<var>B</var>)&nbsp;=&nbsp;(<var>u<sub>2</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A</var><var>u<sub>2</sub></var>&nbsp;+&nbsp;<var>B</var>).
+Simplifying this gives us __eq2:__
+<var>u<sub>1</sub></var>&nbsp;+&nbsp;<var>u<sub>2</sub></var>&nbsp;=&nbsp;&minus;<var>A</var>.
+
+Finally, we can solve __eq1__ and __eq2__ together to get our mapping:
+
+- <var>u<sub>1</sub></var>&nbsp;=&nbsp;&minus;<var>A</var>&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var><var>r</var><sup>2</sup>)
+- <var>u<sub>2</sub></var>&nbsp;=&nbsp;&minus;<var>A</var><var>Z</var><var>r</var><sup>2</sup>&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var><var>r</var><sup>2</sup>)
+
+That's it.
+For every representative <var>r</var>,
+either <var>u<sub>1</sub></var>
+or <var>u<sub>2</sub></var> will work.
+We just need to test which is the right one,
+compute the corresponding <var>v</var> coordinate if we need it,
+done.
+
+
+Constant time implementation
+----------------------------
+
+The official Elligator&nbsp;2 [map](map) is a bit more refined than the
+above.
+Recall that we compute the point
+<var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>) from the
+representative <var>r</var>:
+
+- <var>w</var>&nbsp;=&nbsp;&minus;<var>A</var>&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var>&nbsp;<var>r</var><sup>2</sup>)
+- <var>e</var>&nbsp;=&nbsp;`legendre`(<var>w</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>w</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>w</var>)
+- <var>u</var>&nbsp;=&nbsp;<var>e</var>&nbsp;<var>w</var>&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;<var>e</var>)&nbsp;(<var>A</var>&nbsp;/&nbsp;2)
+- <var>v</var>&nbsp;=&nbsp;&minus;<var>e</var>&nbsp;&radic;(<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>u</var>)
+- <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
+
+Let's walk through it:
+
+- We can readily see that
+  <var>w</var>&nbsp;=&nbsp;<var>u<sub>1</sub></var>.
+
+- The value of <var>e</var> tells us whether
+  <var>v<sub>1</sub></var><sup>2</sup> is really a square:
+  - When <var>e</var>&nbsp;=&nbsp;1 then it is and
+    <var>w</var>&nbsp;=&nbsp;<var>u<sub>1</sub></var> was the right
+    choice.
+  - When <var>e</var>&nbsp;=&nbsp;&minus;1 then it is not and we must
+    switch to <var>u<sub>2</sub></var> instead.
+
+- The
+  <var>u</var>&nbsp;=&nbsp;<var>e</var>&nbsp;<var>w</var>&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;<var>e</var>)&nbsp;(<var>A</var>&nbsp;/&nbsp;2)
+  equation is a bit harder to follow:
+  - When <var>e</var>&nbsp;=&nbsp;1 then <var>u</var> reduces to
+    <var>w</var>&nbsp;=&nbsp;<var>u<sub>1</sub></var>.
+  - When <var>e</var>&nbsp;=&nbsp;&minus;1 then <var>u</var> reduces to
+    &minus;<var>w</var>&minus;<var>A</var>&nbsp;=&nbsp;<var>u<sub>2</sub></var>.
+    _(We can verify that
+    &minus;<var>u<sub>1</sub></var>&minus;<var>A</var>&nbsp;=&nbsp;<var>u<sub>2</sub></var>)_
+
+- The <var>v</var> coordinate is computed by simply solving the curve
+  equation.
+  Note that at this point, the square root is guaranteed to work.
+
+
+Optimising the map
+------------------
+
+The astute reader may have noted that the above requires two
+exponentiations (the `legendre` symbol and the square root),
+while our optimised [formulas](formulas) only require a _single_
+exponentiation to compute both <var>u</var> and <var>v</var>.
+
+To understand how this is even possible,
+we must express <var>v<sub>1</sub></var><sup>2</sup> and
+<var>v<sub>2</sub></var><sup>2</sup> in terms of <var>r</var> and
+<var>Z</var>.
+This is a little tedious, but we ultimately get to:
+
+- <var>v<sub>1</sub></var><sup>2</sup>&nbsp;=&nbsp;<var>A</var>(<var>A</var><sup>2</sup><var>Z</var><var>r</var><sup>2</sup>&nbsp;&minus;&nbsp;<var>B</var>(1&nbsp;+&nbsp;<var>Z</var><var>r</var><sup>2</sup>)<sup>2</sup>)&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var><var>r</var><sup>2</sup>)<sup>3</sup>
+- <var>v<sub>2</sub></var><sup>2</sup>&nbsp;=&nbsp;<var>v<sub>1</sub></var><sup>2</sup><var>Z</var><var>r</var><sup>2</sup>
+
+The only difference between <var>v<sub>1</sub></var><sup>2</sup> and
+<var>v<sub>2</sub></var><sup>2</sup> is the little
+<var>Z</var><var>r</var><sup>2</sup> factor.
+We can exploit this when we compute our square root:
+In practice, exponentiation based square root routines _always_ give a
+meaningful result, even if their operand is not square.
+A clever choice of <var>Z</var> (typically &minus;1 or &radic;&minus;1)
+can let us attempt the square root,
+and if it "fails" we just multiply the result by <var>r</var>.
+
+That way we can know which of <var>u<sub>1</sub></var> or
+<var>u<sub>2</sub></var> is the correct mapping _and_ compute
+<var>v</var> in a single exponentiation.
+And if for some reason we made a less clever choice
+(such as <var>Z</var>&nbsp;=&nbsp;2)
+we can still perform this optimisation.
+We just need an additional multiplication by the right constant to
+compensate.
