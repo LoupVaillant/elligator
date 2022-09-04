@@ -193,7 +193,7 @@ as follows:
 - <var>e</var>&nbsp;=&nbsp;`legendre`(<var>w</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>w</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>w</var>)
 - <var>u</var>&nbsp;=&nbsp;<var>e</var>&nbsp;<var>w</var>&nbsp;&minus;&nbsp;(1&nbsp;&minus;&nbsp;<var>e</var>)&nbsp;(<var>A</var>&nbsp;/&nbsp;2)
 - <var>v</var>&nbsp;=&nbsp;&minus;<var>e</var>&nbsp;&radic;(<var>u</var><sup>3</sup>&nbsp;+&nbsp;<var>A</var>&nbsp;<var>u</var><sup>2</sup>&nbsp;+&nbsp;<var>B</var>&nbsp;<var>u</var>)
-- <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</varsity>)
+- <var>P</var>&nbsp;=&nbsp;(<var>u</var>,&nbsp;<var>v</var>)
 
 
 The inverse map
