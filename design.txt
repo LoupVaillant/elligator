@@ -1,10 +1,10 @@
 {
-  title: Elligator inception
+  title: Designing the Map
   description: How Elligator&nbsp;2 was invented.
 }
 
-Elligator inception
-===================
+How Elligator&nbsp;2 was Designed
+=================================
 
 At a first glance,
 Elligator&nbsp;2 looks like black magic.
@@ -12,7 +12,7 @@ To unravel its mysteries,
 it helps to look into [how it was conceived][ED].
 Turns out,
 as is often the case with such elegant designs,
-the core idea is actually fairly simple.
+the core ideas are actually fairly simple.
 
 [ED]: https://ecc2015.math.u-bordeaux1.fr/documents/hamburg.pdf
 
@@ -60,18 +60,17 @@ and the other will not.
 We then just need to select the right one.
 
 <aside>
-Recall that in prime fields,
-when <var>a</var>&nbsp;/&nbsp;<var>b</var> (or <var>a</var><var>b</var>)
+We can find an older example of this idea in the simplified variant of
+the Shallue-Woestijne-Ulas algorithm in
+[Brier et al. (section7)](https://eprint.iacr.org/2009/340.pdf).
+It exploits the fact that in prime fields,
+when <var>a</var>/<var>b</var> (or <var>a</var><var>b</var>)
 is not a square,
-then either <var>a</var> or <var>b</var> is a square,
+one of <var>a</var> or <var>b</var> is a square,
 and the other is not.
 </aside>
 
-
-Choosing <var>u<sub>1</sub></var> and <var>u<sub>2</sub></var>
---------------------------------------------------------------
-
-The second insight here is using the ratio
+We start by using the ratio
 <var>v<sub>1</sub></var><sup>2</sup>&nbsp;/&nbsp;<var>v<sub>2</sub></var><sup>2</sup>
 as a stepping stone.
 Instead of trying to map <var>r</var> to some <var>u<sub>1</sub></var>
@@ -79,31 +78,29 @@ and <var>u<sub>2</sub></var> directly we map it to a single non-square
 number that we decide _is_ the ratio.
 The easiest way to do this is to square <var>r</var> then multiply it
 by an arbitrary non-square constant <var>Z</var>.
-This leads to __eq1:__
-<var>Z</var><var>r</var><sup>2</sup>&nbsp;=&nbsp;<var>v<sub>1</sub></var><sup>2</sup>&nbsp;/&nbsp;<var>v<sub>2</sub></var><sup>2</sup>.
+This leads to
+__eq1:__&nbsp;<var>Z</var><var>r</var><sup>2</sup>&nbsp;=&nbsp;<var>v<sub>1</sub></var><sup>2</sup>&nbsp;/&nbsp;<var>v<sub>2</sub></var><sup>2</sup>.
 
-
-This is just a stepping stone though:
-we need to map to _two_ numbers,
-and so far we only had _one_ constraint.
+We need to map to _two_ numbers however,
+and so far we only have _one_ constraint.
 We need a second one to get rid of the degree of freedom we have left.
 Recall what our ratio is made of:
 
 - <var>v<sub>1</sub></var><sup>2</sup>&nbsp;=&nbsp;<var>u<sub>1</sub></var><sup>3</sup>&nbsp;+&nbsp;<var>A<var>u<sub>1</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u<sub>1</sub></var>&nbsp;=&nbsp;<var>u<sub>1</sub></var>(<var>u<sub>1</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A<var>u<sub>1</sub></var>&nbsp;+&nbsp;<var>B</var>)
 - <var>v<sub>2</sub></var><sup>2</sup>&nbsp;=&nbsp;<var>u<sub>2</sub></var><sup>3</sup>&nbsp;+&nbsp;<var>A<var>u<sub>2</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>B</var><var>u<sub>2</sub></var>&nbsp;=&nbsp;<var>u<sub>2</sub></var>(<var>u<sub>2</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A<var>u<sub>2</sub></var>&nbsp;+&nbsp;<var>B</var>)
 
-Now let's add that second constraint.
-One that works is deciding that
+A second constraint that works (and is new in Elligator&nbsp;2) is
+deciding that
 (<var>u<sub>1</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A</var><var>u<sub>1</sub></var>&nbsp;+&nbsp;<var>B</var>)&nbsp;=&nbsp;(<var>u<sub>2</sub></var><sup>2</sup>&nbsp;+&nbsp;<var>A</var><var>u<sub>2</sub></var>&nbsp;+&nbsp;<var>B</var>).
-Simplifying this gives us __eq2:__
-<var>u<sub>1</sub></var>&nbsp;+&nbsp;<var>u<sub>2</sub></var>&nbsp;=&nbsp;&minus;<var>A</var>.
+Simplifying this gives us
+__eq2:__&nbsp;<var>u<sub>1</sub></var>&nbsp;+&nbsp;<var>u<sub>2</sub></var>&nbsp;=&nbsp;&minus;<var>A</var>.
 
 Finally, we can solve __eq1__ and __eq2__ together to get our mapping:
 
 - <var>u<sub>1</sub></var>&nbsp;=&nbsp;&minus;<var>A</var>&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var><var>r</var><sup>2</sup>)
 - <var>u<sub>2</sub></var>&nbsp;=&nbsp;&minus;<var>A</var><var>Z</var><var>r</var><sup>2</sup>&nbsp;/&nbsp;(1&nbsp;+&nbsp;<var>Z</var><var>r</var><sup>2</sup>)
 
-That's it.
+That's the gist of it.
 For every representative <var>r</var>,
 either <var>u<sub>1</sub></var>
 or <var>u<sub>2</sub></var> will work.
@@ -153,6 +150,75 @@ Let's walk through it:
 - The <var>v</var> coordinate is computed by simply solving the curve
   equation.
   Note that at this point, the square root is guaranteed to work.
+  Note the use of <var>e</var> to flip the select of the square root,
+  depending on whether we ended up choosing <var>u<sub>1</sub></var> or
+  <var>u<sub>2</sub></var>.
+  This is needed to prevent <var>r</var> and 1/<var>Z</var><var>r</var>
+  from mapping to the same point.
+
+
+Uniformity of the mapping
+-------------------------
+
+Full uniformity would mean having have each representative to map to a
+different curve point.
+This is not quite possible,
+because the order of a curve does not match the cardinality of its
+field,
+let alone a power of two.
+This forces mappings like Elligator&nbsp;2 to accept some imperfections.
+
+The first imperfection comes from the map being a function of
+<var>r</var><sup>2</sup>.
+This eliminates the sign of <var>r</var>,
+such that both <var>r</var> and &minus;<var>r</var> map to the same
+point.
+In practice this means Elligator&nbsp;2 will cover only about _half_ of
+the curve.
+The other half remains unmapped,
+which is why the reverse map sometimes fail.
+
+In many cases we can live with that.
+If the reverse map doesn't work we can just generate another point and
+retry,
+and many protocols that map inputs to curve points can survive the loss
+of half the curve.
+In some cases however we do need a truly uniform map that covers the
+whole curve.
+One way to do so is to select _two_ random numbers
+(or derive two independent hashes),
+map each to its curve point,
+then add those two points together.
+This covers the whole curve with no detectable bias.
+
+The second imperfection comes from the cardinality of the field
+GF(<var>q</var>) not being a power of 2.
+When <var>q</var> is sufficiently close to a power of 2
+(as is the case for Curve25519 and Curve448),
+the bias is undetectable and we can ignore the issue.
+When it is too far,
+we need to select a number from a much bigger power of 2 before reducing
+it
+(with modular reduction)
+into a field element.
+
+A _potential_ third imperfection to watch out for is how <var>r</var>
+and 1/<var>Z</var><var>r</var> will merely _flip_
+<var>u<sub>1</sub></var> and <var>u<sub>2</sub></var>.
+The correct <var>u</var> coordinate will end up being the same in both
+cases,
+so if we derive <var>v</var> naively we'll end up with _four_
+representatives mapping to the same point instead of just two.
+Thankfully we have an easy counter:
+whenever (<var>u</var>,&nbsp;<var>v</var>) is on the curve,
+so is (<var>u</var>,&nbsp;&minus;<var>v</var>).
+Thus, we can select the sign of <var>v</var> depending on whether
+<var>u<sub>1</sub></var> or <var>u<sub>2</sub></var> was chosen.
+This let us map <var>r</var> and 1/<var>Z</var><var>r</var> to
+_opposite_ points instead of the same one:
+if <var>r</var> maps to (<var>u</var>,&nbsp;<var>v</var>),
+1/<var>Z</var><var>r</var> will map to
+(<var>u</var>,&nbsp;&minus;<var>v</var>).
 
 
 Optimising the map
