@@ -44,8 +44,8 @@ suitable for key exchange.
   is implemented.
   The functionality is exposed through a RFC9180-style
   KEM interface.
-  Elligator is used to obfuscated transport-level connections of GNUnet
-  peers.
+  Elligator is used to obfuscate transport-level key exchanges
+  and authentications of GNUnet peers.
 
 Hash-to-Point implementations
 -----------------------------
@@ -88,7 +88,7 @@ Incomplete implementations
   - The inverse map does not pad the representative at all,
     so the top two bits are always zero.
     To pad those bits in a way that is compatible with its direct map we
-    need to randomly negate the representative th1en randomly add
+    need to randomly negate the representative then randomly add
     <var>p</var>.
   - The [special public key derivation](key-exchange)
     required to use the inverse map safely is missing.
