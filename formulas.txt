@@ -234,7 +234,7 @@ The recommended way to test the eligibility of a point
       CMOVE(u, t, is_negative(v))
       r     = u × r
       t     = -r
-      CMOVE(r, t, r.is_negative())
+      CMOVE(r, t, is_negative(r))
       return r
 
 The constants <var>A</var> and <var>Z</var> are the same as the direct
